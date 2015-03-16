@@ -4,14 +4,14 @@ INTERFACE
 
 	TYPE
 		Nptr = ^TNode;
-	
+
 		TNode = RECORD
 			offset       : Integer;
-			len	         : Integer;
+			len          : Integer;
 			next_sibling : Nptr;
 			child        : Nptr;
 		END;
-	
+
 		TSuffixTree = RECORD
 			root : TNode;
 			s    : String;
@@ -20,7 +20,6 @@ INTERFACE
 
 	FUNCTION CreateSuffixTreeFrom(s : String) : TSuffixTree;
 	FUNCTION GetString(node : TNode; s : String) : String;
-	FUNCTION NumberLeaves(tree : TSuffixTree) : Integer;
 
 IMPLEMENTATION
 
@@ -115,6 +114,7 @@ IMPLEMENTATION
 						WRiteLn('Mid node: ',GetString(mid^, s));
 						WriteLN('new node: ',GetString(newNode^, s));
 						WriteLn('Updated child node: ',GetString(child^, s));
+
 						break;
 					END;
 				END
@@ -172,6 +172,12 @@ IMPLEMENTATION
 	BEGIN
 		result := CountNodes(Addr(tree.root));
 	END;}
+
+	FUNCTION FindSubstrings(length : Integer; repetitions : Integer; 
+		tree : TSuffixTree) : Boolean;
+	BEGIN
+		result := false;
+	END;
 
 BEGIN
 END.
