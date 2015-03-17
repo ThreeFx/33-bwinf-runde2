@@ -61,11 +61,8 @@ IMPLEMENTATION
 
 		nodes := 2;
 
-		WriteLn('Root node: ',GetString(cur^, s));
-
 		FOR i := 2 TO Length(s) DO
 		BEGIN
-			WriteLn('Iteration #',i - 1);
 			cur := Addr(root);
 			j := i;
 
@@ -86,7 +83,6 @@ IMPLEMENTATION
 
 					IF (k - j) = len THEN
 					BEGIN
-						WRiteLn('Full traverse of: ', GetString(child^, s),'; continuing');
 						cur := child;
 						j := k;
 					END
@@ -111,10 +107,6 @@ IMPLEMENTATION
 
 						nodes := nodes + 2;
 
-						WRiteLn('Mid node: ',GetString(mid^, s));
-						WriteLN('new node: ',GetString(newNode^, s));
-						WriteLn('Updated child node: ',GetString(child^, s));
-
 						break;
 					END;
 				END
@@ -130,7 +122,6 @@ IMPLEMENTATION
 
 					nodes := nodes + 1;
 
-					WriteLn('new child node: ',GetString(child^, s));
 					break;
 				END;
 			END;
@@ -146,9 +137,6 @@ IMPLEMENTATION
 		{result : String;}
 	BEGIN
 		result := '';
-		{WRiteLn('offset: ', node.offset);
-		WriteLn('length: ', node.len);
-		WriteLN('string: ', s);}
 		FOR i := node.offset + 1 TO node.offset + node.len DO
 		BEGIN
 			result := result + s[i];
@@ -173,10 +161,10 @@ IMPLEMENTATION
 		result := CountNodes(Addr(tree.root));
 	END;}
 
-	FUNCTION FindSubstrings(length : Integer; repetitions : Integer; 
-		tree : TSuffixTree) : Boolean;
+	PROCEDURE FindSubstrings(length : Integer; repetitions : Integer;
+		tree : TSuffixTree);
 	BEGIN
-		result := false;
+		WRiteLn('To be implemented...');
 	END;
 
 BEGIN
