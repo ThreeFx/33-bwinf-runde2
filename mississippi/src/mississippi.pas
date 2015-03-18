@@ -13,9 +13,6 @@ BEGIN
 	Read(f, result);
 END;
 
-
-
-
 VAR
 	tree : TSuffixTree;
 	s : String;
@@ -23,17 +20,18 @@ VAR
 	ms : Integer;
 
 BEGIN
-	IF ParamCount = 1 THEN
+	IF (ParamCount = 1) AND FileExists(ParamStr(1)) THEN
 	BEGIN
 		s := ReadFromFile(ParamStr(1));
-		WriteLn('Creating suffix tree...');
+		WriteLn('[Main] Creating suffix tree...');
 		FromTime := Now;
-		tree := CreateSuffixTreeFrom(s);
+		tree := CreateSuffixTree(s);
 		ms := MillisecondsBetween(Now, FromTime);
-		WriteLn('Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
+		WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
+		WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
 	END
 	ELSE
 	BEGIN
-		WRiteLn('Wrong number of Parameters');
+		WRiteLn('Wrong number of parameters or file not found');
 	END;
 END.
