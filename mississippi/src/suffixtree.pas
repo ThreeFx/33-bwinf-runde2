@@ -3,28 +3,37 @@ UNIT SuffixTree;
 INTERFACE
 
 	TYPE
-		Nptr = ^TNode;
+		NodePtr = ^TNode;
 
 		TNode = RECORD
 			offset       : Integer;
 			len          : Integer;
-			next_sibling : Nptr;
-			child        : Nptr;
+			next_sibling : NodePtr;
+			child        : NodePtr;
 		END;
 
 		TSuffixTree = RECORD
-			root : NPtr;
+			root : NodePtr;
 			s    : String;
 			nodes : Integer;
 		END;
 
+		ResultPtr = ^TResult;
+
+		TResult = RECORD
+			node : NodePtr;
+			rep : Integer;
+			next : ResultPtr;
+		END;
+
 	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
-	FUNCTION GetString(node : TNode; s : String) : String;
+	FUNCTION GetString(node : NodePtr; s : String) : String;
 	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
+	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
 
 IMPLEMENTATION
 
-	FUNCTION GetNodeAt(node : Nptr; s : String; c : Char) : Nptr;
+	FUNCTION GetNodeAt(node : NodePtr; s : String; c : Char) : NodePtr;
 	BEGIN
 		result := nil;
 		WHILE node <> nil DO
@@ -38,7 +47,7 @@ IMPLEMENTATION
 		END;
 	END;
 
-	FUNCTION NumberChildren(node : Nptr) : Integer;
+	FUNCTION NumberChildren(node : NodePtr) : Integer;
 	BEGIN
 		node := node^.child;
 		result := 0;
@@ -49,20 +58,20 @@ IMPLEMENTATION
 		END;
 	END;
 
-	PROCEDURE PrintChildren(node : Nptr; s : String);
+	PROCEDURE PrintChildren(node : NodePtr; s : String);
 	BEGIN
 		IF node <> nil THEN
 		BEGIN
 			node := node^.child;
 			WHILE node <> nil DO
 			BEGIN
-				WriteLn(GetString(node^, s), ' id: ', Integer(node));
+				WriteLn(GetString(node, s), ' id: ', Integer(node));
 				node := node^.next_sibling;
 			END;
 		END;
 	END;
 
-	PROCEDURE AddChild(parent, child : Nptr);
+	PROCEDURE AddChild(parent, child : NodePtr);
 	BEGIN
 		IF (parent <> nil) AND (child <> nil) THEN
 		BEGIN
@@ -71,9 +80,9 @@ IMPLEMENTATION
 		END;
 	END;
 
-	PROCEDURE ReplaceChildWith(node, oldChild, newChild : Nptr);
+	PROCEDURE ReplaceChildWith(node, oldChild, newChild : NodePtr);
 	VAR
-		currentChild, temp : Nptr;
+		currentChild, temp : NodePtr;
 	BEGIN
 		IF (node <> nil) AND (oldChild <> nil) AND (newChild <> nil) THEN
 		BEGIN
@@ -110,7 +119,7 @@ IMPLEMENTATION
 	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
 	VAR
 		i, j, k, len, offset, nodes : Integer;
-		root, cur, child, mid, newNode : Nptr;
+		root, cur, child, mid, newNode : NodePtr;
 	BEGIN
 		s := s + '$';
 		WriteLn('[CreateSuffixTree] Input size: ',Length(s));
@@ -122,7 +131,7 @@ IMPLEMENTATION
 		cur^.child := nil;
 
 		{
-		WriteLn('[CreateSuffixTree] Inserted full string: ',GetString(cur^, s));
+		WriteLn('[CreateSuffixTree] Inserted full string: ',GetString(cur, s));
 		}
 		root := GetMem(SizeOf(TNode));
 		root^.offset := 0;
@@ -166,8 +175,8 @@ IMPLEMENTATION
 					ELSE
 					BEGIN
 						{
-						WriteLn('[CreateSuffixTree] Parent node: ', GetString(cur^, s));
-						WriteLn('[CreateSuffixTree] Current node: ',GetString(child^, s));
+						WriteLn('[CreateSuffixTree] Parent node: ', GetString(cur, s));
+						WriteLn('[CreateSuffixTree] Current node: ',GetString(child, s));
 						}
 
 						newNode := GetMem(SizeOf(TNode));
@@ -191,9 +200,9 @@ IMPLEMENTATION
 						AddChild(mid, child);
 
 						{
-						WriteLn('[CreateSuffixTree] Mid node: ', GetString(mid^, s));
-						WriteLn('[CreateSuffixTree] New node: ', GetString(newNode^, s));
-						WriteLn('[CreateSuffixTree] Update child node: ', GetString(child^, s));
+						WriteLn('[CreateSuffixTree] Mid node: ', GetString(mid, s));
+						WriteLn('[CreateSuffixTree] New node: ', GetString(newNode, s));
+						WriteLn('[CreateSuffixTree] Update child node: ', GetString(child, s));
 						WRiteLn('[CreateSuffixTree] Number children: ',NumberChildren(cur));
 						WriteLn('[CreateSuffixTree] Children of current:');
 						PrintChildren(cur, s);
@@ -217,8 +226,8 @@ IMPLEMENTATION
 					AddChild(cur, child);
 
 					{
-					WriteLn('[CreateSuffixTree] Parent node: ',GetString(cur^, s));
-					WriteLn('[CreateSuffixTree] Inserted new child: ',GetString(child^, s));
+					WriteLn('[CreateSuffixTree] Parent node: ',GetString(cur, s));
+					WriteLn('[CreateSuffixTree] Inserted new child: ',GetString(child, s));
 					}
 
 					nodes := nodes + 1;
@@ -232,50 +241,138 @@ IMPLEMENTATION
 		result.nodes := nodes;
 	END;
 
-	FUNCTION GetString(node : TNode; s : String) : String;
+	FUNCTION GetString(node : NodePtr; s : String) : String;
 	VAR
 		i : Integer;
 	BEGIN
 		result := '';
-		FOR i := node.offset + 1 TO node.offset + node.len DO
+		IF node <> nil THEN
 		BEGIN
-			result := result + s[i];
-		END;
-		IF result = '' THEN
-		BEGIN
-			result := 'root node';
+			FOR i := node^.offset + 1 TO node^.offset + node^.len DO
+			BEGIN
+				result := result + s[i];
+			END;
+			IF result = '' THEN
+			BEGIN
+				result := 'root node';
+			END;
 		END;
 	END;
 
-	FUNCTION CountLeavess(node : Nptr) : Integer;
+	FUNCTION LeavesBelow(node : NodePtr) : Integer;
 	BEGIN
 		result := 1;
-		IF node^.child <> nil THEN
+		IF node <> nil THEN
 		BEGIN
-			result := CountLeavess(node^.child);
-		END;
-		IF node^.next_sibling <> nil THEN
-		BEGIN
-			result := result + CountLeavess(node^.next_sibling);
+			IF node^.child <> nil THEN
+			BEGIN
+				result := LeavesBelow(node^.child);
+			END;
+			IF node^.next_sibling <> nil THEN
+			BEGIN
+				result := result + LeavesBelow(node^.next_sibling);
+			END;
 		END;
 	END;
 
 	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
 	BEGIN
-		result := CountLeavess(tree.root);
+		result := LeavesBelow(tree.root);
 	END;
 
-	PROCEDURE FindSubstrings(len : Integer; repetitions : Integer;
-		tree : TSuffixTree);
-	VAR
-		depth : Integer;
+	FUNCTION CreateNew : ResultPtr;
 	BEGIN
-		depth := 0;
-		WHILE depth <= len DO
-		BEGIN
-			
-		END;
+		result := GetMem(SizeOf(ResultPtr));
+		result^.node := nil;
+		result^.next := nil;
+	END;
 
+	PROCEDURE Add(node : NodePtr; rep : Integer; oldRes : ResultPtr);
+	VAR
+		newRes : ResultPtr;
+	BEGIN
+		IF (node <> nil) AND (oldRes <> nil) THEN
+		BEGIN
+			newRes := GetMem(SizeOf(ResultPtr));
+			newRes^.node := node;
+			newRes^.rep := rep;
+			newRes^.next := oldRes^.next;
+
+			oldRes^.next := newRes;
+		END;
+	END;
+
+	PROCEDURE AddCollection(c, oldRes : ResultPtr);
+	BEGIN
+		IF (c <> nil) AND (oldRes <> nil) THEN
+		BEGIN
+			WHILE c <> nil DO
+			BEGIN
+				Add(c^.node, c^.rep, oldRes);
+				c := c^.next;
+			END;
+		END;
+	END;
+
+	FUNCTION FindSubstringsInNode(len, rep : Integer; node : NodePtr; currentDepth : Integer; s : String) : ResultPtr;
+	BEGIN
+		result := CreateNew;
+		IF node <> nil THEN
+		BEGIN
+			WriteLn('[FindSubstringsInNode] Beginning search');
+			node := node^.child;
+
+			WHILE node <> nil DO
+			BEGIN
+				WriteLn('[FindSubstringsInNode] Node #',Integer(node),': ',GetString(node, s),
+				        ' has ',LeavesBelow(node^.child),
+				        ' leaves; current length ',currentDepth + node^.len);
+
+				IF (currentDepth + node^.len >= len) AND (LeavesBelow(node^.child) >= rep) THEN
+				BEGIN
+					WriteLn('[FindSubstringsInNode] Found node: ',GetString(node, s));
+					Add(node, LeavesBelow(node^.child), result);
+				END
+				ELSE
+				BEGIN
+					AddCollection(FindSubstringsInNode(len, rep, node^.child, currentDepth + node^.len, s), result);
+				END;
+
+				node := node^.next_sibling;
+			END;
+		END;
+	END;
+
+	FUNCTION GetStringBetween(top, goal : NodePtr; s : String) : String;
+	VAR
+		i : Integer;
+	BEGIN
+		result := '';
+
+		IF (top <> nil) AND (goal <> nil) THEN
+		BEGIN
+			FOR i := top^.offset + 1 TO goal^.offset + goal^.len DO
+			BEGIN
+				result := result + s[i];
+			END;
+		END;
+	END;
+
+	PROCEDURE PrintFoundStrings(start : NodePtr; res : ResultPtr; s : String);
+	BEGIN
+		IF res <> nil THEN
+		BEGIN
+			WHILE res <> nil DO
+			BEGIN
+				WriteLn(GetStringBetween(start, res^.node, s), ' (', res^.rep, ')');
+				res := res^.next;
+			END;
+		END;
+	END;
+
+	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
+	BEGIN
+		PrintFoundStrings(tree.root, FindSubstringsInNode(len, rep, tree.root, 0, tree.s), tree.s);
 	END;
 
 BEGIN
