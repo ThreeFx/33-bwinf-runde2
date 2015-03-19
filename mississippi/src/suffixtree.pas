@@ -322,28 +322,30 @@ IMPLEMENTATION
 	END;
 
 	FUNCTION FindSubstringsInNode(len, rep : Integer; ilist : NodeListPtr;
-		node : NodePtr; curLen : Integer; s : String) : ResultListPtr;
+		node : NodePtr; curLen : Integer) : ResultListPtr;
 	BEGIN
 		result := nil;
 
 		IF node <> nil THEN
 		BEGIN
-			
+			{
 			WriteLn('[FindSubstringsInNode] Beginning search at: ',GetString(node, s));
-			
+			}
+
 			WHILE node <> nil DO
 			BEGIN
-				
+				{
 				WriteLn('[FindSubstringsInNode] Node #',Integer(node),': ',GetString(node, s),
 				        ' has ',LeavesBelow(node^.child),
 				        ' leaves; current length ',curLen + node^.len);
-				
+				}
+
 				IF ((curLen + node^.len) >= len) AND (LeavesBelow(node^.child) >= rep) THEN
 				BEGIN
 					result := Add(Add(node, ilist), LeavesBelow(node^.child), result);
 				END;
 
-				result := AddCollection(FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len, s), result);
+				result := AddCollection(FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len), result);
 
 				node := node^.next_sibling;
 			END;
@@ -385,7 +387,7 @@ IMPLEMENTATION
 		END;
 		}
 
-		list := FindSubstringsInNode(len, rep, Add(tree.root, nil), tree.root, 0, tree.s);
+		list := FindSubstringsInNode(len, rep, Add(tree.root, nil), tree.root, 0);
 
 		PrintFoundStrings(list, tree.s);
 	END;
