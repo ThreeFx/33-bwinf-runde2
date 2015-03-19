@@ -29,11 +29,15 @@ BEGIN
 		ms := MillisecondsBetween(Now, FromTime);
 		WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
 		WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
-		len := Integer(ParamStr(2));
-		rep := Integer(ParamStr(3));
+		len := StrtoInt(ParamStr(2));
+		rep := StrToInt(ParamStr(3));
+		WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
 		IF (len > 0) AND (rep > 0) THEN
 		BEGIN
+			FromTime := Now;
 			FindSubstrings(len, rep, tree);
+			ms := MillisecondsBetween(Now, FromTime);
+			WriteLn('[Main] Query for substrings repeated ',rep,' times and are at least ',len,' characters long took ',ms,'ms');
 		END
 		ELSE
 		BEGIN
