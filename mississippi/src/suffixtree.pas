@@ -373,7 +373,6 @@ IMPLEMENTATION
 
 	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
 	VAR
-		child : NodePtr;
 		list : ResultListPtr;
 	BEGIN
 		{
@@ -387,7 +386,7 @@ IMPLEMENTATION
 		END;
 		}
 
-		list := FindSubstringsInNode(len, rep, Add(tree.root, nil), tree.root, 0);
+		list := FindSubstringsInNode(len, rep, nil, tree.root, 0);
 
 		PrintFoundStrings(list, tree.s);
 	END;
