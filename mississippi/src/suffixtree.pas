@@ -14,12 +14,6 @@ INTERFACE
 			child        : NodePtr;
 		END;
 
-		TSuffixTree = RECORD
-			root : NodePtr;
-			s    : String;
-			nodes : Integer;
-		END;
-
 		TResultList = RECORD
 			nodes : NodeListPtr;
 			len : Integer;
@@ -32,7 +26,14 @@ INTERFACE
 			next : NodeListPtr;
 		END;
 
+		TSuffixTree = RECORD
+			root : NodePtr;
+			s    : String;
+			nodes : Integer;
+		END;
+
 	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
+	{PROCEDURE DisposeTree(tree : TSuffixTree);}
 	FUNCTION GetString(node : NodePtr; s : String) : String;
 	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
 	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
@@ -55,12 +56,15 @@ IMPLEMENTATION
 
 	FUNCTION NumberChildren(node : NodePtr) : Integer;
 	BEGIN
-		node := node^.child;
-		result := 0;
-		WHILE node <> nil DO
+		IF node <> nil THEN
 		BEGIN
-			Inc(result);
-			node := node^.next_sibling;
+			node := node^.child;
+			result := 0;
+			WHILE node <> nil DO
+			BEGIN
+				Inc(result);
+				node := node^.next_sibling;
+			END;
 		END;
 	END;
 
@@ -282,23 +286,79 @@ IMPLEMENTATION
 		result := LeavesBelow(tree.root);
 	END;
 
-	FUNCTION Add(nodelist : NodeListPtr; len, rep : Integer; list : ResultListPtr) : ResultListPtr; OVERLOAD;
+	FUNCTION GetLength(nodelist : NodeListPtr) : Integer;
 	BEGIN
-		result := list;
-		IF nodelist <> nil THEN
+		result := 0;
+		WHILE nodelist <> nil DO
 		BEGIN
-			result := GetMem(SizeOf(ResultListPtr));
-			result^.nodes := nodelist;
-			result^.len := len;
-			result^.rep := rep;
-			result^.next := list;
+			result := result + nodelist^.node^.len;
+			nodelist := nodelist^.next;
 		END;
 	END;
 
-	FUNCTION AddCollection(newlist, list : ResultListPtr) : ResultListPtr; OVERLOAD;
+	FUNCTION GetRep(nodelist : NodeListPtr) : Integer;
+	BEGIN
+		WHILE nodelist^.next <> nil DO
+		BEGIN
+			nodelist := nodelist^.next;
+		END;
+
+		result := LeavesBelow(nodelist^.node^.child);
+	END;
+
+	FUNCTION IsDirectSuffix(candidate, parent : NodeListPtr) : Boolean;
+	BEGIN
+		result := true;
+
+		IF (candidate <> nil) AND (parent <> nil) THEN
+		BEGIN
+			parent := parent^.next^.next;
+			WHILE (candidate <> nil) AND (parent <> nil) DO
+			BEGIN
+				WRiteLn('[IsDirectSuffix] Comparing ',Integer(candidate^.node),' and ',Integer(parent^.node));
+				IF candidate^.node = parent^.node THEN
+				BEGIN
+					exit;
+				END;
+				candidate := candidate^.next;
+				parent := parent^.next;
+			END;
+		END;
+
+		result := false;
+	END;
+
+	FUNCTION Add(nodelist : NodeListPtr; len, rep : Integer; list : ResultListPtr) : ResultListPtr; OVERLOAD;
+	VAR
+		currentItem : ResultListPtr;
 	BEGIN
 		result := list;
-		IF (newList <> nil) AND (result <> nil) THEN
+		currentItem := list;
+
+		WHILE currentItem <> nil DO
+		BEGIN
+			IF IsDirectSuffix(currentItem^.nodes, nodelist) AND (currentItem^.rep = rep) THEN
+			BEGIN
+				WriteLn('[Add:ResultListPtr] Found suffix, replacing..');
+				currentItem^.nodes := nodelist;
+				currentItem^.len := len;
+				currentItem^.rep := rep;
+				exit;
+			END;
+			currentItem := currentItem^.next;
+		END;
+
+		result := GetMem(SizeOf(TResultList));
+		result^.nodes := nodelist;
+		result^.len := len;
+		result^.rep := rep;
+		result^.next := list;
+	END;
+
+	FUNCTION AddCollection(newlist, list : ResultListPtr) : ResultListPtr;
+	BEGIN
+		result := list;
+		IF result <> nil THEN
 		BEGIN
 			WHILE newList <> nil DO
 			BEGIN
@@ -306,7 +366,7 @@ IMPLEMENTATION
 				newList := newList^.next;
 			END;
 		END
-		ELSE IF list = nil THEN
+		ELSE
 		BEGIN
 			result := newList;
 		END;
@@ -317,7 +377,7 @@ IMPLEMENTATION
 		result := list;
 		IF node <> nil THEN
 		BEGIN
-			result := GetMem(SizeOf(ResultListPtr));
+			result := GetMem(SizeOf(TNodeList));
 			result^.node := node;
 			result^.next := list;
 		END;
@@ -341,7 +401,7 @@ IMPLEMENTATION
 				result := Add(Add(node, ilist), node^.len + curLen, LeavesBelow(node^.child), result);
 			END;
 
-			result := AddCollection(FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len), result);
+			result := AddCollection(result, FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len));
 
 			node := node^.next_sibling;
 		END;
@@ -366,6 +426,27 @@ IMPLEMENTATION
 		END;
 	END;
 
+	{
+	PROCEDURE DisposeNodeList(nlist : NodeListPtr);
+	BEGIN
+		IF nList <> nil THEN
+		BEGIN
+			DisposeNodeList(nList^.next);
+			FreeMem(nList);
+		END;
+	END;
+
+	PROCEDURE DisposeResultList(list : ResultListPtr);
+	BEGIN
+		IF list <> nil THEN
+		BEGIN
+			DisposeNodeList(list^.nodes);
+			DisposeResultList(list^.next);
+			FreeMem(list);
+		END;
+	END;
+	}
+
 	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
 	VAR
 		list : ResultListPtr;
@@ -385,6 +466,23 @@ IMPLEMENTATION
 
 		PrintFoundStrings(list, tree.s);
 	END;
+
+	{
+	PROCEDURE DisposeNode(node : NodePtr);
+	BEGIN
+		IF node <> nil THEN
+		BEGIN
+			DisposeNode(node^.child);
+			DisposeNode(node^.next_sibling);
+			FreeMem(node);
+		END;
+	END;
+
+	PROCEDURE DisposeTree(tree : TSuffixTree);
+	BEGIN
+		DisposeNode(tree.root);
+	END;
+	}
 
 BEGIN
 END.

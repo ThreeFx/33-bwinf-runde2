@@ -43,6 +43,7 @@ BEGIN
 		BEGIN
 			WriteLn('[Main] Please enter positive values for length and repetitions');
 		END;
+		{DisposeTree(tree);}
 	END
 	ELSE
 	BEGIN
