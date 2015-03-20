@@ -22,6 +22,7 @@ INTERFACE
 
 		TResultList = RECORD
 			nodes : NodeListPtr;
+			len : Integer;
 			rep : Integer;
 			next : ResultListPtr;
 		END;
@@ -281,13 +282,14 @@ IMPLEMENTATION
 		result := LeavesBelow(tree.root);
 	END;
 
-	FUNCTION Add(nodelist : NodeListPtr; rep : Integer; list : ResultListPtr) : ResultListPtr; OVERLOAD;
+	FUNCTION Add(nodelist : NodeListPtr; len, rep : Integer; list : ResultListPtr) : ResultListPtr; OVERLOAD;
 	BEGIN
 		result := list;
 		IF nodelist <> nil THEN
 		BEGIN
 			result := GetMem(SizeOf(ResultListPtr));
 			result^.nodes := nodelist;
+			result^.len := len;
 			result^.rep := rep;
 			result^.next := list;
 		END;
@@ -300,7 +302,7 @@ IMPLEMENTATION
 		BEGIN
 			WHILE newList <> nil DO
 			BEGIN
-				result := Add(newList^.nodes, newlist^.rep, result);
+				result := Add(newList^.nodes, newList^.len, newlist^.rep, result);
 				newList := newList^.next;
 			END;
 		END
@@ -326,29 +328,22 @@ IMPLEMENTATION
 	BEGIN
 		result := nil;
 
-		IF node <> nil THEN
+		WHILE node <> nil DO
 		BEGIN
 			{
-			WriteLn('[FindSubstringsInNode] Beginning search at: ',GetString(node, s));
+			WriteLn('[FindSubstringsInNode] Node #',Integer(node),': ',GetString(node, s),
+				    ' has ',LeavesBelow(node^.child),
+				    ' leaves; current length ',curLen + node^.len);
 			}
 
-			WHILE node <> nil DO
+			IF ((curLen + node^.len) >= len) AND (LeavesBelow(node^.child) >= rep) THEN
 			BEGIN
-				{
-				WriteLn('[FindSubstringsInNode] Node #',Integer(node),': ',GetString(node, s),
-				        ' has ',LeavesBelow(node^.child),
-				        ' leaves; current length ',curLen + node^.len);
-				}
-
-				IF ((curLen + node^.len) >= len) AND (LeavesBelow(node^.child) >= rep) THEN
-				BEGIN
-					result := Add(Add(node, ilist), LeavesBelow(node^.child), result);
-				END;
-
-				result := AddCollection(FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len), result);
-
-				node := node^.next_sibling;
+				result := Add(Add(node, ilist), node^.len + curLen, LeavesBelow(node^.child), result);
 			END;
+
+			result := AddCollection(FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len), result);
+
+			node := node^.next_sibling;
 		END;
 	END;
 
