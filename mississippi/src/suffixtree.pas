@@ -132,7 +132,9 @@ IMPLEMENTATION
 		root, cur, child, mid, newNode : NodePtr;
 	BEGIN
 		s := s + '$';
+		{
 		WriteLn('[CreateSuffixTree] Input size: ',Length(s));
+		}
 
 		cur := GetMem(SizeOf(TNode));
 		cur^.offset := 0;
@@ -265,94 +267,58 @@ IMPLEMENTATION
 		END;
 	END;
 
-	FUNCTION LeavesBelow(node : NodePtr) : Integer;
+	FUNCTION LeavesAt(node : NodePtr) : Integer;
 	BEGIN
 		result := 1;
 		IF node <> nil THEN
 		BEGIN
 			IF node^.child <> nil THEN
 			BEGIN
-				result := LeavesBelow(node^.child);
+				result := LeavesAt(node^.child);
 			END;
 			IF node^.next_sibling <> nil THEN
 			BEGIN
-				result := result + LeavesBelow(node^.next_sibling);
+				result := result + LeavesAt(node^.next_sibling);
 			END;
+		END;
+	END;
+
+	FUNCTION LeavesBelow(node : NodePtr) : Integer;
+	BEGIN
+		result := 1;
+		IF node <> nil THEN
+		BEGIN
+			result := LeavesAt(node^.child);
 		END;
 	END;
 
 	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
 	BEGIN
-		result := LeavesBelow(tree.root);
+		result := LeavesAt(tree.root);
 	END;
 
-	FUNCTION GetLength(nodelist : NodeListPtr) : Integer;
+	FUNCTION Add(node : NodePtr; list : NodeListPtr) : NodeListPtr; OVERLOAD;
 	BEGIN
-		result := 0;
-		WHILE nodelist <> nil DO
+		result := list;
+		IF node <> nil THEN
 		BEGIN
-			result := result + nodelist^.node^.len;
-			nodelist := nodelist^.next;
+			result := GetMem(SizeOf(TNodeList));
+			result^.node := node;
+			result^.next := list;
 		END;
-	END;
-
-	FUNCTION GetRep(nodelist : NodeListPtr) : Integer;
-	BEGIN
-		WHILE nodelist^.next <> nil DO
-		BEGIN
-			nodelist := nodelist^.next;
-		END;
-
-		result := LeavesBelow(nodelist^.node^.child);
-	END;
-
-	FUNCTION IsDirectSuffix(candidate, parent : NodeListPtr) : Boolean;
-	BEGIN
-		result := true;
-
-		IF (candidate <> nil) AND (parent <> nil) THEN
-		BEGIN
-			parent := parent^.next^.next;
-			WHILE (candidate <> nil) AND (parent <> nil) DO
-			BEGIN
-				WRiteLn('[IsDirectSuffix] Comparing ',Integer(candidate^.node),' and ',Integer(parent^.node));
-				IF candidate^.node = parent^.node THEN
-				BEGIN
-					exit;
-				END;
-				candidate := candidate^.next;
-				parent := parent^.next;
-			END;
-		END;
-
-		result := false;
 	END;
 
 	FUNCTION Add(nodelist : NodeListPtr; len, rep : Integer; list : ResultListPtr) : ResultListPtr; OVERLOAD;
-	VAR
-		currentItem : ResultListPtr;
 	BEGIN
 		result := list;
-		currentItem := list;
-
-		WHILE currentItem <> nil DO
+		IF nodelist <> nil THEN
 		BEGIN
-			IF IsDirectSuffix(currentItem^.nodes, nodelist) AND (currentItem^.rep = rep) THEN
-			BEGIN
-				WriteLn('[Add:ResultListPtr] Found suffix, replacing..');
-				currentItem^.nodes := nodelist;
-				currentItem^.len := len;
-				currentItem^.rep := rep;
-				exit;
-			END;
-			currentItem := currentItem^.next;
+			result := GetMem(SizeOf(TResultList));
+			result^.nodes := nodelist;
+			result^.len := len;
+			result^.rep := rep;
+			result^.next := list;
 		END;
-
-		result := GetMem(SizeOf(TResultList));
-		result^.nodes := nodelist;
-		result^.len := len;
-		result^.rep := rep;
-		result^.next := list;
 	END;
 
 	FUNCTION AddCollection(newlist, list : ResultListPtr) : ResultListPtr;
@@ -372,19 +338,8 @@ IMPLEMENTATION
 		END;
 	END;
 
-	FUNCTION Add(node : NodePtr; list : NodeListPtr) : NodeListPtr; OVERLOAD;
-	BEGIN
-		result := list;
-		IF node <> nil THEN
-		BEGIN
-			result := GetMem(SizeOf(TNodeList));
-			result^.node := node;
-			result^.next := list;
-		END;
-	END;
-
 	FUNCTION FindSubstringsInNode(len, rep : Integer; ilist : NodeListPtr;
-		node : NodePtr; curLen : Integer) : ResultListPtr;
+	                              node : NodePtr; curLen : Integer) : ResultListPtr;
 	BEGIN
 		result := nil;
 
@@ -392,16 +347,18 @@ IMPLEMENTATION
 		BEGIN
 			{
 			WriteLn('[FindSubstringsInNode] Node #',Integer(node),': ',GetString(node, s),
-				    ' has ',LeavesBelow(node^.child),
+				    ' has ',LeavesBelow(node),
 				    ' leaves; current length ',curLen + node^.len);
 			}
 
-			IF ((curLen + node^.len) >= len) AND (LeavesBelow(node^.child) >= rep) THEN
+			IF ((curLen + node^.len) >= len) AND (LeavesBelow(node) >= rep) THEN
 			BEGIN
-				result := Add(Add(node, ilist), node^.len + curLen, LeavesBelow(node^.child), result);
+				result := Add(Add(node, ilist), node^.len + curLen, LeavesBelow(node), result);
 			END;
 
-			result := AddCollection(result, FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, curLen + node^.len));
+			result := AddCollection(
+			            FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, node^.len + curlen),
+			            result);
 
 			node := node^.next_sibling;
 		END;
