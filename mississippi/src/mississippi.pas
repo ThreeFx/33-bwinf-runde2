@@ -23,27 +23,32 @@ BEGIN
 	IF (ParamCount = 3) AND FileExists(ParamStr(1)) THEN
 	BEGIN
 		s := ReadFromFile(ParamStr(1));
-		WriteLn('[Main] Creating suffix tree...');
-		FromTime := Now;
-		tree := CreateSuffixTree(s);
-		ms := MillisecondsBetween(Now, FromTime);
-		WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
-		WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
 		len := StrtoInt(ParamStr(2));
 		rep := StrToInt(ParamStr(3));
-		WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
+
 		IF (len > 0) AND (rep > 0) THEN
 		BEGIN
+			WriteLn('[Main] Creating suffix tree...');
+			FromTime := Now;
+			tree := CreateSuffixTree(s);
+			ms := MillisecondsBetween(Now, FromTime);
+			WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
+			WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
+
+			WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
 			FromTime := Now;
 			FindSubstrings(len, rep, tree);
 			ms := MillisecondsBetween(Now, FromTime);
-			WriteLn('[Main] Query for substrings repeated ',rep,' times and are at least ',len,' characters long took ',ms,'ms');
+			WriteLn('[Main] Query for substrings repeated at least ',rep,' times ',
+				           'and are at least ',len,' characters long ',
+				           'took ',ms,'ms');
+
+			DisposeTree(tree);
 		END
 		ELSE
 		BEGIN
 			WriteLn('[Main] Please enter positive values for length and repetitions');
 		END;
-		{DisposeTree(tree);}
 	END
 	ELSE
 	BEGIN
