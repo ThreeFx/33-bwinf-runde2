@@ -5,7 +5,7 @@ import Control.Monad (filterM)
 import Data.List ((\\))
 
 data Weight  = Weight !Bool !Int deriving (Show, Eq)
-data Problem = Problem [Weight] [Weight] deriving Show
+data Problem = Problem [Weight] [Weight] deriving (Show, Eq)
 
 main = putStrLn "To be implemented"
 
