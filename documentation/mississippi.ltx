@@ -14,6 +14,18 @@
 \definecolor{redstrings}{rgb}{0.9,0,0}
 \definecolor{codegray}{gray}{0.9}
 
+\newcommand{\code}[1] {
+	\colorbox{codegray}{\lstinline|#1|}^
+}
+
+
+\begin{document}
+
+\title{33. Bundeswettbewerb Informatik}
+\author{Ben Fiedler}
+
+\part{Aufgabe 3: Mississippi}
+
 \lstset{language=Delphi,
   basicstyle=\ttfamily\scriptsize,
   numbers=left,
@@ -28,22 +40,13 @@
   stringstyle=\color{redstrings}
 }
 
-\newcommand{\code}[1] {
-	\colorbox{codegray}{\lstinline|#1|}^
-}
-
-
-\begin{document}
-
-\title{33. Bundeswettbewerb Informatik}
-\author{Ben Fiedler}
-
-\part{Aufgabe 3: Mississippi}
 
 \section{Aufgabe}
 
-In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge untersucht werden.
+In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge untersucht werden. Durch die Größe der zu verarbeitenden Zeichenketten wurde schnell ersichtlich, ein brute-force Ansatz ausgeschlossen ist. <Problemart??>
 
 \section{Lösungsidee}
+
+
 
 \end{document}
