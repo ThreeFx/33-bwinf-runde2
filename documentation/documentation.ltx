@@ -1,14 +1,23 @@
-\documentclass[a4paper]{article}
+\documentclass[11pt,a4paper]{report}
 
 \usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2cm]{geometry}
 \usepackage[utf8]{inputenc}
-\usepackage[ngerman]{babel}
-\usepackage{lmodern}
 \usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{lmodern}
 \usepackage{listings}
 \usepackage{Inconsolata}
 \usepackage[usenames, dvipsnames]{color}
-\usepackage[onehalfspacing]{setspace}
+\usepackage{float}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Ben Fiedler (3345)} \chead{Aufgabe \thepart} \rhead{\thepage}
 
 \definecolor{bluekeywords}{rgb}{0.13,0.13,1}
 \definecolor{greencomments}{rgb}{0,0.5,0}
@@ -25,13 +34,9 @@
 \title{33. Bundeswettbewerb Informatik}
 \author{Ben Fiedler}
 
-\onehalfspacing
-
 \maketitle
-\newpage
 
 \tableofcontents
-\newpage
 
 \part{Aufgabe 3: Mississippi}
 
@@ -50,23 +55,34 @@
 }
 
 
-\section{Aufgabe}
+\chapter*{Aufgabe}
 
-In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge untersucht werden. Durch die Größe der zu verarbeitenden Zeichenketten wurde schnell ersichtlich, ein brute-force Ansatz ausgeschlossen ist. <Problemart??>
+In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge
+untersucht werden. Durch die Größe der zu verarbeitenden Zeichenketten wurde schnell ersichtlich, ein brute-force Ansatz
+ausgeschlossen ist. <Problemart??>
 
-\newpage
+\bigskip
 
-\section{Lösungsidee}
+\chapter{Lösungsidee}
 
-\subsection{Modellierung}
+\section{Modellierung}
 
-Als Lösungsstrategie wurde ein sogenannter Suffixtree (auch Suffixbaum)\footnotemark gewählt. Ein Suffixbaum ist ein gerichteter Baum, in dem alle Suffixe (Endungen) eines Strings (Zeichenkette) gespeichert werden. Der Suffixbaum besteht aus einer root node (Wurzelknoten), von dem Kanten, welche durch die entsprechenden Substrings (Teilzeichenketten) markiert sind, zu weiteren nodes ausgehen, von denen wiederum Kanten ausgehen bis es zum Blatt, auch Leaf genannt, kommt, welches das Ende des Substrings markiert. Alle vollständigen
-Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings Präfixe (Anfänge) von Suffixen eines Strings sind und der Baum diese zwangsweise enthalten muss, ist es möglich, durch diesen alle Substrings eines Urspringsstrings darzustellen und diesen auf diese zu untersuchen.
+Als Lösungsstrategie wurde ein sogenannter Suffixtree\footnotemark (auch Suffixbaum) gewählt. Ein Suffixbaum ist ein
+gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) eines Strings (Zeichenkette) gespeichert werden. Der
+Suffixbaum besteht aus einer root node (Wurzelknoten), von dem Kanten, welche durch die entsprechenden Substrings
+(Teilzeichenketten) markiert sind, zu weiteren Knoten ausgehen, von denen wiederum Kanten ausgehen bis es zum Blatt,
+auch Leaf genannt, kommt, welches das Ende des Substrings markiert. Alle vollständigen Baumdurchläufe, also
+Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da
+alle Substrings Präfixe (Anfänge) von Suffixen eines Strings sind und der Baum diese zwangsweise enthalten muss, ist es
+möglich, durch diesen alle Substrings eines Urspringsstrings darzustellen und diesen auf diese zu untersuchen. Anbei ein
+Beispiel für den Suffixbaum des Strings \tt{abaaba}:
 
-\footnotetext{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung schlägt, wurde dieser als Lösungsmethode für ungeeignet empfunden.}
+\footnotetext{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den
+Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Substrings vs. einzelne
+Zeichen) schlägt, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.}
 
-\subsection{Grundlegendes}
+\section{Grundlagen}
 
-Die Suche nach Substrings geschieht in der Form von Baumdurchläufen. 
+Zur Ermittlung der Lösung lassen 
 
 \end{document}
