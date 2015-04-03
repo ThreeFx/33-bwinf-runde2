@@ -10,6 +10,12 @@
 *.o
 *.exe
 
+# Some tests to exclude because of size
+
+chrX*.fa
+chrY*.fa
+chr1*.fa
+
 # Documentation stuff
 
 *.pdf
