@@ -1,4 +1,17 @@
+# Programming stuff
+
+# Haskell modules
 *.hi
+
+# Pascal units
+*.ppu
+
+# General stuff
 *.o
 *.exe
-*.ppu
+
+# Documentation stuff
+
+*.pdf
+*.aux
+*.log

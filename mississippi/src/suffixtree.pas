@@ -1,3 +1,5 @@
+{ (c) Ben Fiedler 2015 }
+
 UNIT SuffixTree;
 
 INTERFACE
@@ -128,9 +130,9 @@ IMPLEMENTATION USES SysUtils;
 		root, cur, child, mid, newNode : NodePtr;
 	BEGIN
 		s := s + '$';
-		{
+		
 		WriteLn('[CreateSuffixTree] Input size: ',Length(s));
-		}
+		
 
 		cur := GetMem(SizeOf(TNode));
 		cur^.offset := 0;

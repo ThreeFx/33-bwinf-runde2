@@ -1,0 +1,65 @@
+\documentclass[a4paper]{article}
+
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{Inconsolata}
+\usepackage[usenames, dvipsnames]{color}
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+\definecolor{codegray}{gray}{0.9}
+
+\newcommand{\code}[1] {
+	\colorbox{codegray}{\lstinline|#1|}^
+}
+
+
+\begin{document}
+
+\title{33. Bundeswettbewerb Informatik}
+\author{Ben Fiedler}
+
+\maketitle
+
+\part{Aufgabe 3: Mississippi}
+
+\lstset{language=Delphi,
+  basicstyle=\ttfamily\scriptsize,
+  numbers=left,
+  showspaces=false,
+  showtabs=false,
+  breaklines=true,
+  showstringspaces=false,
+  breakatwhitespace=true,
+  escapeinside={(*@}{@*)},
+  commentstyle=\color{greencomments},
+  keywordstyle=\color{bluekeywords},
+  stringstyle=\color{redstrings}
+}
+
+
+\section{Aufgabe}
+
+In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge untersucht werden. Durch die Größe der zu verarbeitenden Zeichenketten wurde schnell ersichtlich, ein brute-force Ansatz ausgeschlossen ist. <Problemart??>
+
+\newpage
+
+\section{Lösungsidee}
+
+\subsection{Modellierung}
+
+Als Lösungsstrategie wurde ein sogenannter Suffixtree (auch Suffixbaum)\footnotemark gewählt. Ein Suffixbaum ist ein gerichteter Baum, in dem alle Suffixe (Endungen) eines Strings (Zeichenkette) gespeichert werden. Der Suffixbaum besteht aus einer root node (Wurzelknoten), von dem Kanten, welche durch die entsprechenden Substrings (Teilzeichenketten) markiert sind, zu weiteren nodes ausgehen, von denen wiederum Kanten ausgehen bis es zum Blatt, auch Leaf genannt, kommt, welches das Ende des Substrings markiert. Alle vollständigen
+Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings Präfixe (Anfänge) von Suffixen eines Strings sind und der Baum diese zwangsweise enthalten muss, ist es möglich, durch diesen alle Substrings eines Urspringsstrings darzustellen und diesen auf diese zu untersuchen.
+
+\footnotetext{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung schlägt, wurde dieser als Lösungsmethode für ungeeignet empfunden.}
+
+\subsection{Grundlegendes}
+
+Die Suche nach Substrings geschieht in der Form von Baumdurchläufen. 
+
+\end{document}
