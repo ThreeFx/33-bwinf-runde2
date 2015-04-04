@@ -1,6 +1,6 @@
 \documentclass[11pt,a4paper]{report}
 
-\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2cm]{geometry}
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=3cm]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[ngerman]{babel}
@@ -13,8 +13,21 @@
 \usepackage{Inconsolata}
 \usepackage[usenames, dvipsnames]{color}
 \usepackage{float}
-\usepackage{fancyhdr}
 
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[fileext=lod]{abbildung}
+
+\usepackage{tikz-qtree}
+
+\tikzset{
+	every tree node/.style={draw,circle},
+	level distance=2cm,
+	sibling distance=1cm,
+	edge from parent path={(\tikzparentnode) -- (\tikzchildnode)}
+}
+
+
+\usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{Ben Fiedler (3345)} \chead{Aufgabe \thepart} \rhead{\thepage}
@@ -55,11 +68,10 @@
 }
 
 
-\chapter*{Aufgabe}
+\chapter{Aufgabe}
 
-In Aufgabe 3 soll eine lange Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge
-untersucht werden. Durch die Größe der zu verarbeitenden Zeichenketten wurde schnell ersichtlich, ein brute-force Ansatz
-ausgeschlossen ist. <Problemart??>
+In Aufgabe 3 soll eine Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge
+untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Dabei soll Rücksicht auf die Skalierbarkeit des Programms genommen werden, sodass Abfragen für relativ große Datenmengen einigermaßen effizient abgewickelt werden. <Was noch??>
 
 \bigskip
 
@@ -67,22 +79,50 @@ ausgeschlossen ist. <Problemart??>
 
 \section{Modellierung}
 
-Als Lösungsstrategie wurde ein sogenannter Suffixtree\footnotemark (auch Suffixbaum) gewählt. Ein Suffixbaum ist ein
-gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) eines Strings (Zeichenkette) gespeichert werden. Der
-Suffixbaum besteht aus einer root node (Wurzelknoten), von dem Kanten, welche durch die entsprechenden Substrings
-(Teilzeichenketten) markiert sind, zu weiteren Knoten ausgehen, von denen wiederum Kanten ausgehen bis es zum Blatt,
-auch Leaf genannt, kommt, welches das Ende des Substrings markiert. Alle vollständigen Baumdurchläufe, also
-Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da
-alle Substrings Präfixe (Anfänge) von Suffixen eines Strings sind und der Baum diese zwangsweise enthalten muss, ist es
-möglich, durch diesen alle Substrings eines Urspringsstrings darzustellen und diesen auf diese zu untersuchen. Anbei ein
-Beispiel für den Suffixbaum des Strings \tt{abaaba}:
+Als Lösungsstrategie wurde ein sogenannter Suffixbaum\footnote{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Teilzeichenketten vs. einzelne Zeichen) schlägt, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.} gewählt. Ein Suffixbaum ist ein gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) eines Strings
+(Zeichenkette) gespeichert werden. Wichtig hierbei ist, dass die Teilyeichenkette mit einem speziellen Terminationszeichen versehen ist, da erst dadurch verdeutlicht wird, ob eine bestimmte Zeichenfolge auch ein Suffix ist.\\ Der Suffixbaum besteht aus einem Wurzelknoten (root node), von dem Kanten, welche durch die entsprechenden Substrings (Teilzeichenketten) markiert sind, zu weiteren Knoten ausgehen, von welchen wiederum Kanten ausgehen bis zu einem Blatt, auch Leaf genannt, welches
+das Ende eines Suffixes markiert. Hierbei werden gemeinsame Präfixe (Anfänge) unterschiedlicher Suffixe in einer Kante gespeichtert. Alle vollständigen Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings eines Strings Präfixe von Suffixen dieses Strings sind, sind in einem Suffixbaum alle Substrings eines Urspringsstrings enthalten, wodurch effiziente Abfragen nach den Substrings
+ermöglicht werden.\\
+Eine Abfrage nach den Eigenschaften einer existierenden Teilzeichenkette geschieht hierbei durch einen Baumdurchlauf. Bei diesem geht man Teilzeichenkette für Teilzeichenkette den Baum enstprechend der zu betrachtenden Teilzeichenkette entlang.\\
+Die Eigenschaften der betrachteten Teilzeichenkette lassen sich an der resultierenden Position im Baum ablesen:\\
+Die \textbf{Länge} der Teilzeichenkette ergibt sich aus der Summe der Längen der durchlaufenen Teilzeichenketten und ggf. der Tiefe in der aktuellen Kante.\\
+Die \textbf{Häufigkeit} der Teilzeichenkette ergibt sich aus der Anzahl der Blätter unter dem aktuellen Knoten. Falls die Suche nach der Teilzeichenkette inmitten einer Kante beendet wurde, so gilt diese Regel für den Knoten \textit{unter} der entsprechenden Kante.\\
+Als Beispiel wollen wir den Suffixbaum des Strings $abaaba$ betrachten. Nach Einfügen eines Terminationszeichens ($\$$) sieht dieser so aus:
 
-\footnotetext{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den
-Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Substrings vs. einzelne
-Zeichen) schlägt, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.}
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$a$};
+		[.{}
+			\edge node[midway,left] {$ba$};
+			[.{}
+				\edge node[midway,left] {$aba\$$};
+				[.{} ]
+				\edge node[midway,right] {$\$$};
+				[.{} ]
+			]
+			\edge node[midway,right] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$ba$};
+		[.{}
+			\edge node[midway,left] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$\$$};
+		[.{} ]
+	]
+	\caption{Suffixbaum für $abaaba\$$}
+\end{abbildung}
 
 \section{Grundlagen}
 
-Zur Ermittlung der Lösung lassen 
+Die Ermittlung der zu suchenden Teilzeichenketten geschieht in Form von Baumdurchläufen des zuvor aufgebauten Suffixbaumes. Dabei werden für alle Teilzeichenketten in dem Baum die Länge und die Häufgkeit dieser ermittelt und geprüft, ob diese den zuvor festgelegten Kriterien entsprechen oder nicht. Dabei werden manuell alle $\frac{n*(n*1)}{2}$ Teilzeichenketten abgelaufen und geprüft, was viel unnötige Arbeit bedeutet.
 
 \end{document}
