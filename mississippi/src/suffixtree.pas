@@ -341,6 +341,8 @@ IMPLEMENTATION USES SysUtils;
 
 	FUNCTION FindSubstringsInNode(len, rep : Integer; ilist : NodeListPtr;
 		node : NodePtr; curLen : Integer; s : String) : ResultListPtr;
+	VAR
+		leavesBelow : Integer;
 	BEGIN
 		result := nil;
 
@@ -352,14 +354,19 @@ IMPLEMENTATION USES SysUtils;
 				    ' leaves; current length ',curLen + node^.len);
 			}
 
-			IF ((curLen + node^.len) >= len) AND (LeavesBelow(node) >= rep) THEN
+			leavesBelow = LeavesBelow(node);
+
+			IF ((curLen + node^.len) >= len) AND (leavesBelow >= rep) THEN
 			BEGIN
 				result := Add(Add(node, ilist), node^.len + curLen, LeavesBelow(node), result, s);
 			END;
 
-			result := AddCollection(
-			            FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, node^.len + curlen, s),
-			            result, s);
+			IF leavesBelow >= rep THEN
+			BEGIN
+				result := AddCollection(
+					        FindSubstringsInNode(len, rep, Add(node, ilist), node^.child, node^.len + curlen, s),
+					        result, s);
+			END;
 
 			node := node^.next_sibling;
 		END;
