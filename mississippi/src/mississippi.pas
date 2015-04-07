@@ -22,6 +22,7 @@ VAR
 BEGIN
 	IF (ParamCount = 3) AND FileExists(ParamStr(1)) THEN
 	BEGIN
+		WriteLn('[Main] Beginning read...');
 		s := ReadFromFile(ParamStr(1));
 		len := StrtoInt(ParamStr(2));
 		rep := StrToInt(ParamStr(3));
