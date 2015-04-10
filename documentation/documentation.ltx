@@ -1,17 +1,19 @@
 \documentclass[11pt,a4paper]{report}
 
-\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=3cm]{geometry}
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[ngerman]{babel}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{caption}
 \usepackage{graphicx}
 \usepackage{lmodern}
 \usepackage{listings}
 \usepackage{Inconsolata}
 \usepackage[usenames, dvipsnames]{color}
+\usepackage{booktabs, tabularx}
 \usepackage{float}
 
 \usepackage{newfloat}
@@ -38,13 +40,12 @@
 \definecolor{codegray}{gray}{0.9}
 
 \newcommand{\code}[1] {
-	\colorbox{codegray}{\lstinline|#1|}^
+	\colorbox{codegray}{\lstinline|#1|}
 }
-
 
 \begin{document}
 
-\title{33. Bundeswettbewerb Informatik}
+\title{33. Bundeswettbewerb Informatik 2. Runde}
 \author{Ben Fiedler}
 
 \maketitle
@@ -61,10 +62,16 @@
   breaklines=true,
   showstringspaces=false,
   breakatwhitespace=true,
+  tabsize=4,
   escapeinside={(*@}{@*)},
   commentstyle=\color{greencomments},
   keywordstyle=\color{bluekeywords},
-  stringstyle=\color{redstrings}
+  stringstyle=\color{redstrings},
+  literate={ö}{{\"o}}1
+           {ä}{{\"a}}1
+           {ü}{{\"u}}1
+           {ß}{{\ss}}1
+           {Ü}{{\"U}}1
 }
 
 
@@ -79,18 +86,238 @@ untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Da
 
 \section{Modellierung}
 
-Als Lösungsstrategie wurde ein sogenannter Suffixbaum\footnote{Die ursprüngliche Idee basierte auf einem sogennannten Trie (auch Präfixbaum). Da der Suffixbaum den Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Teilzeichenketten vs. einzelne Zeichen) schlägt, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.} gewählt. Ein Suffixbaum ist ein gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) eines Strings
-(Zeichenkette) gespeichert werden. Wichtig hierbei ist, dass die Teilyeichenkette mit einem speziellen Terminationszeichen versehen ist, da erst dadurch verdeutlicht wird, ob eine bestimmte Zeichenfolge auch ein Suffix ist.\\ Der Suffixbaum besteht aus einem Wurzelknoten (root node), von dem Kanten, welche durch die entsprechenden Substrings (Teilzeichenketten) markiert sind, zu weiteren Knoten ausgehen, von welchen wiederum Kanten ausgehen bis zu einem Blatt, auch Leaf genannt, welches
-das Ende eines Suffixes markiert. Hierbei werden gemeinsame Präfixe (Anfänge) unterschiedlicher Suffixe in einer Kante gespeichtert. Alle vollständigen Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden, stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings eines Strings Präfixe von Suffixen dieses Strings sind, sind in einem Suffixbaum alle Substrings eines Urspringsstrings enthalten, wodurch effiziente Abfragen nach den Substrings
-ermöglicht werden.\\
-Eine Abfrage nach den Eigenschaften einer existierenden Teilzeichenkette geschieht hierbei durch einen Baumdurchlauf. Bei diesem geht man Teilzeichenkette für Teilzeichenkette den Baum enstprechend der zu betrachtenden Teilzeichenkette entlang.\\
-Die Eigenschaften der betrachteten Teilzeichenkette lassen sich an der resultierenden Position im Baum ablesen:\\
-Die \textbf{Länge} der Teilzeichenkette ergibt sich aus der Summe der Längen der durchlaufenen Teilzeichenketten und ggf. der Tiefe in der aktuellen Kante.\\
-Die \textbf{Häufigkeit} der Teilzeichenkette ergibt sich aus der Anzahl der Blätter unter dem aktuellen Knoten. Falls die Suche nach der Teilzeichenkette inmitten einer Kante beendet wurde, so gilt diese Regel für den Knoten \textit{unter} der entsprechenden Kante.\\
-Als Beispiel wollen wir den Suffixbaum des Strings $abaaba$ betrachten. Nach Einfügen eines Terminationszeichens ($\$$) sieht dieser so aus:
+Als Lösungsstrategie wurde ein sogenannter Suffixbaum\footnote{Die ursprüngliche Idee basierte auf einem sogennannten Präfixbaum (auch Trie). Da der Suffixbaum dem Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Teilzeichenketten vs. einzelne Zeichen) überlegen ist, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.} gewählt. Ein Suffixbaum ist ein gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) einer Zeichenkette (String) gespeichert werden.\\
+Eine Abfrage nach den Eigenschaften einer existierenden Teilzeichenkette (Substring) geschieht hierbei durch einen Baumdurchlauf. Bei diesem geht man Teilzeichenkette für Teilzeichenkette den Baum enstprechend der zu betrachtenden Teilzeichenkette entlang. Die Eigenschaften der betrachteten Teilzeichenkette lassen sich an der resultierenden Position im Baum ablesen.\\
 
+\section{Aufbau eines Suffixbaumes}
+
+Der Suffixbaum besteht aus einem Wurzelknoten (root node), von dem Kanten, welche durch die entsprechenden Teilzeichenketten markiert sind, zu weiteren Knoten ausgehen, von welchen wiederum Kanten ausgehen bis zu einem Blatt, auch Leaf genannt, welches das Ende eines Suffixes markiert. Hierbei werden gemeinsame Präfixe (Anfänge) unterschiedlicher Suffixe in einer Kante gespeichtert. Alle vollständigen Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden,
+stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings eines Strings Präfixe von Suffixen dieses Strings sind, sind in einem Suffixbaum alle Substrings eines Urspringsstrings enthalten.\\
+
+Um einen Suffixbaum aus einer Zeichenkette $T$ aufzubauen, muss zu Beginn and das ende von $T$ ein spezielles Terminationszeichen, welches nicht $T$ vorkommt, eingefügt werden. Dadurch wird verhindert, dass ein Suffix von $T$ gleichzeitig ein Präfix eines anderen Suffixes von $T$ ist, sodass der resultierende Baum alle Suffixe von $T$ enthält.\\
+Ein Suffixbaum wird \textit{schrittweise} aufgebaut, indem nacheinander alle Suffixe von $T$, beginnend mit $T$ selbst, eingefügt werden. Dabei wird der Baum bei jedem Durchlauf angepasst, indem zum Beispiel eine neue Kante hinzugefügt oder eine existierende verändert wird.\\
+Als Beispiel soll der Aufbau des Suffixbaumes für die Zeichenkette $abaaba$ betracht werden:\\
+Zu Beginn des Prozesses wird ein Terminationszeichen $\$$ an $abaaba$ angehängt, sodass $T = abaaba\$$.\\
+Schließlich wird ein einfacher Baum bestehend aus nur einer Kante erzeugt:
 
 \begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge[draw=red] node[midway,left,red] {$abaaba\$$};
+		[.{} ]
+	]
+	\caption{Einfügen von $abaaba\$$}
+\end{abbildung}
+
+Nun wird das nächste Suffix in den Baum integriert. Dazu muss lediglich eine neue Kante mit einem neuen Knoten erschaffen werden:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$abaaba\$$};
+		[.{} ]
+		\edge[draw=red] node[midway,right,red] {$baaba\$$};
+		[.{} ]
+	]
+	\caption{Einfügen von $baaba\$$}
+\end{abbildung}
+
+Um das nächste Suffix $aaba\$$ einzufügen, wird die Kante $abaaba\$$ angepasst. Dabei wird sie nach der längsten gemeinsamen Teilkette der beiden Zeichenketten gespalten und an ihr die beiden übrigen Suffixe eingefügt. Wichtig dabei ist zu beachten, dass das ursprüngliche Suffix nicht verloren geht:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge[draw=blue] node[midway,left,blue] {$a$};
+		[.{}
+			\edge[draw=blue] node[midway,left,blue] {$baaba\$$};
+			[.{} ]
+			\edge[draw=red] node[midway,right,red] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$baaba\$$};
+		[.{} ]
+	]
+	\caption{Einfügen von $aaba\$$ durch Anpassung der existierenden Kante}
+\end{abbildung}
+
+Um das nächte Suffix $aba\$$ einzufügen, wird die bereits existierende Kante $a$ vollständig abgelaufen. Die bereits existierende Kante $baaba\$$ wird nun wie zuvor nach der längsten gemeinsamen Teilkette gespalten und ein neuer Suffixrest eingefügt:
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$a$};
+		[.{}
+			\edge[draw=blue] node[midway,left,blue] {$ba$};
+			[.{}
+				\edge[draw=blue] node[midway,left,blue] {$aba\$$};
+				[.{} ]
+				\edge[draw=red] node[midway,right,red] {$\$$};
+				[.{} ]
+			]
+		]
+		\edge node[midway,right] {$baaba\$$};
+		[.{} ]
+	]
+	\caption{Einfügen von $aba\$$ durch Anpassung der existierenden Kante $baaba\$$ im linken Teilbaum}
+\end{abbildung}
+
+Dasselbe Verfahren findet auch bei dem Einfügen des nächsten Suffixes statt:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$a$};
+		[.{}
+			\edge node[midway,left] {$ba$};
+			[.{}
+				\edge node[midway,left] {$aba\$$};
+				[.{} ]
+				\edge node[midway,right] {$\$$};
+				[.{} ]
+			]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge[draw=blue] node[midway,right,blue] {$ba$};
+		[.{}
+			\edge[draw=red] node[midway,left,red] {$\$$};
+			[.{} ]
+			\edge[draw=blue] node[midway,right,blue] {$aba\$$};
+			[.{} ]
+		]
+	]
+	\caption{Aktualisierung der Kante $baaba\$$ zur Integration von $ba\$$}
+\end{abbildung}
+
+Der Suffixrest von $a\$$ wird nach Ablaufen des bereits existierenden Knotens $a$ eingefügt:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$a$};
+		[.{}
+			\edge node[midway,left] {$ba$};
+			[.{}
+				\edge node[midway,left] {$aba\$$};
+				[.{} ]
+				\edge node[midway,right] {$\$$};
+				[.{} ]
+			]
+			\edge[draw=red] node[midway,right,red] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$ba$};
+		[.{}
+			\edge node[midway,left] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+	]
+	\caption{Einfügen von $a\$$}
+\end{abbildung}
+
+Schließlich wird nur noch das leere Suffix eingefügt:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge node[midway,left] {$a$};
+		[.{}
+			\edge node[midway,left] {$ba$};
+			[.{}
+				\edge node[midway,left] {$aba\$$};
+				[.{} ]
+				\edge node[midway,right] {$\$$};
+				[.{} ]
+			]
+			\edge node[midway,right] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$ba$};
+		[.{}
+			\edge node[midway,left] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge[draw=red] node[midway,right,red] {$\$$};
+		[.{} ]
+	]
+	\caption{Vollständiger Suffixbaum für $abaaba\$$}
+\end{abbildung}
+
+Der erzeugte Baum enthält alle Suffixe der ursprünglichen Zeichenkette $abaaba\$$.
+
+\section{Nutzung des Baumes}
+
+Die Eigenschaften einer Teilzeichenkette lassen sich durch einen Durchlauf des Suffixbaumes anhand dieser ermitteln.\\
+Dabei spielt die Position an der der String erschöpft wurde die entscheidende Rolle.\\
+Die \textbf{Länge} der Teilzeichenkette ergibt sich aus der Summe der Längen der durchlaufenden Kanten und ggf. der aktuellen Tiefe in der Kante, wenn das Ablaufen des Baumes nicht an einem Knoten endete.\\
+Die \textbf{Häufigkeit} der Teilzeichenkette ergibt sich aus der Anzahl der Blätter unter dem aktuellen Knoten. Falls die Suche nach der Teilzeichenkette inmitten einer Kante beendet wurde, so gilt diese Regel für den Knoten \textit{unter} der entsprechenden Kante. Diese Methode funktioniert, da durch das systematische Einfügen der Suffixe garantiert ist, dass die Reste aller Suffixe, welche diese Teilkette als Präfix enthalten, an diesem Knoten angefügt sind.  \\
+
+Als Beipielbaum werde der Suffixbaum aus 2.2 verwendet. Zunächst sollen die Eigenschaften der Zeichenfolge $aba$ ermittelt werden. Dafür wird der Baum bis zum Erschöpfen der Zeichenkette durchlaufen.\\
+Die \textbf{Länge} der Teilzeichenkette ist hierbei die Summe der Länge von $a$ und $ab$, also $3$.\\
+Die \textbf{Häufigkeit} mit der $aba$ in dem Urspringsstring $abaaba$ vorkommt ist gleich der Anzahl der Knoten unter der aktuellen Position, also $2$.\\
+Anbei eine grafische Darstellung des Baumes nach dem Durchlauf. Der Baumdurchlauf ist hierbei rot gefärbt und endet an dem grün markierten Knoten. Die Blätter unter dem beim Durchlauf erreichten Knoten sind blau gefärbt:
+
+\begin{abbildung}[H]
+	\centering
+	\Tree
+	[.{}
+		\edge[draw=red] node[midway,left,red] {$a$};
+		[.{}
+			\edge[draw=red] node[midway,left,red] {$ba$};
+			[.\node[draw=green,thick]{};
+				\edge node[midway,left] {$aba\$$};
+				[.\node[draw=blue,thick]{}; ]
+				\edge node[midway,right] {$\$$};
+				[.\node[draw=blue,thick]{}; ]
+			]
+			\edge node[midway,right] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$ba$};
+		[.{}
+			\edge node[midway,left] {$\$$};
+			[.{} ]
+			\edge node[midway,right] {$aba\$$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$\$$};
+		[.{} ]
+	]
+	\caption{Baum nach Durchlauf von $aba$}
+\end{abbildung}
+
+\section{Lösungsgrundlage}
+
+Die Ermittlung der zu suchenden Teilzeichenketten geschieht in Form von Baumdurchläufen des zuvor aufgebauten Suffixbaumes. Dabei werden für die Menge alle Teilzeichenketten der Zeichenfolge $T$ die Länge und die Häufgkeit dieser ermittelt und geprüft, ob sie den zuvor festgelegten Kriterien entsprechen oder nicht. Für eine Zeichenkette der Länge $n$ werden erst alle $\frac{n*(n+1)}{2}$ Teilzeichenketten überprüft und danach noch die nichtmaximalen Teizeichenketten entfernt. Dass diese Methode
+nicht effizient ist, ist sofort ersichtlich. Dieses Problem soll durch eine simple, jedoch effektive Optimierung gelöst werden.
+
+\subsection{Optimierung 1: Substringssuche nach Baumaufbau}
+
+Der Suffixbaum, der zuvor für jede Teilzeichenkette durchlaufen wurde, soll nun genau einmal komplett durchlaufen werden, wobei trotzdem jede Teilzeichenkette beachtet werden soll. So soll nicht jede Teilzeichenkette generiert und danach erst geprüft werden, sondern andersherum. Grundlage dafür ist ein pre-order Durchlauf des Baumes. Durch den Pfad durch Kanten und Knoten wird dabei implizit eine Teilkette dargestellt, für welche direkt ermittelt werden kann ob sie der Bedingung unterliegt.\\
+Dabei ist aber zu beachten, dass immer noch jede einzelne Teilkette betrachtet wird und die Bestimmung von 
+
+\subsection{Optimierung 2: Eliminierung der trivial maximalen Zeichenkette}
+
+Bisher wurden die maximalen Teilzeichenketten einer potentiellen Lösung erst nach der Prüfung aller Teilzeichenketten eines Baumes bestimmt. Durch die genaue Betrachtung der Bediningung für maximale Teilzeichenketten kombiniert mit den Eigenschaften des Suffixbaumes können nun alle \textit{trivial nicht maximalen} Teilzeichenketten eines Baumes während dem Baumdurchlauf schon ausgeschlossen werden. Eine Teilzeichenkette $s$ ist genau dann \textit{trivial nicht maximal}, wenn eine andere Zeichenkette $t$ mit derselben Häufigkeit existiert und $s$ ein Präfix von $t$ ist.\\
+Da die Bestimmung der Häufigkeit einer bestimmten Teilkette durch die Zählung der Blätter unterhalb dem nächsten Knoten einer Kante geschieht, ist schnell ersichtlich, dass sich die Anzahl der Blätter unabhängig von den Kanten nur durch die Knoten bestimmt wird. Aus diesem Grund sind alle Teilzeichenketten, die an einem Knoten enden bereits maximal, was an dem gewählten Beispiel gezeigt wird:\\
+
+\begin{abbildung}
 	\centering
 	\Tree
 	[.{}
@@ -118,11 +345,959 @@ Als Beispiel wollen wir den Suffixbaum des Strings $abaaba$ betrachten. Nach Ein
 		\edge node[midway,right] {$\$$};
 		[.{} ]
 	]
-	\caption{Suffixbaum für $abaaba\$$}
+	\caption{Vollständiger Suffixbaum von $abaaba\$$}
 \end{abbildung}
 
-\section{Grundlagen}
+Hierbei sollen alle maximalen Teilzeichenketten mit einer Länge von mindestens zwei Zeichen und mindestens zwei Wiederholungen gefunden werden. Ohne die Optimierung wird die Menge ${ab (2), aba (2), ba (2)}$ bestimmt, wobei $ab$ eine \textit{trivial nicht maximale} Zeichenkette von $aba$ ist. Durch die Implementation wird die Zeichenfolge $ab$ während des Baumdurchlaufes bereits ausgeschlossen, da sie sich in einer Kante befindet.
 
-Die Ermittlung der zu suchenden Teilzeichenketten geschieht in Form von Baumdurchläufen des zuvor aufgebauten Suffixbaumes. Dabei werden für alle Teilzeichenketten in dem Baum die Länge und die Häufgkeit dieser ermittelt und geprüft, ob diese den zuvor festgelegten Kriterien entsprechen oder nicht. Dabei werden manuell alle $\frac{n*(n+1)}{2}$ Teilzeichenketten abgelaufen und geprüft, was viel unnötige Arbeit bedeutet.
+\subsection{Optimierung 3: Speicherung von $T$ durch Zahlen anstatt Strings}
+
+Die beiden vorigen Implementationen speichern in ihren Kanten bisher ganze Teilzeichenketten der gesamten Kette $T$. Dies vereinfacht zwar die Darstellung des Baumes, ist aber sehr speicheraufwändig. Durch eine alternative Variante der Darstellung der Teilzeichenketten soll die Speichernutzung verbessert werden, indem nur noch zwei Zahlen statt der kompletten Teilzeichenkette für die Repräsentation einer Teilzeichenkette $s$ gespeichert werden: Das Tupel aus der Verschiebung des Anfangs von $s$
+zum Anfang der Zeichenkette $T$ und der Länge von $s$.\\
+So wird die Teilzeichenkette $aba$ der Zeichenkette $abaaba$ als $(0, 3)$\footnote{Equivalent ist die Speicherung als $(3, 3)$, dies spielt für die Darstellung keine Rolle} gespeichert.\\
+Der vorher aufgebaute Suffixbaum sieht nach dieser Änderung so aus:
+
+\begin{abbildung}[H]
+	\centering
+	\tikzset{level distance=3cm}
+	\Tree
+	[.{}
+		\edge node[midway,left] {$(0, 1)$};
+		[.{}
+			\edge node[midway,left] {$(1, 2)$};
+			[.{}
+			\edge node[midway,left] {$(3, 4)$};
+				[.{} ]
+				\edge node[midway,right] {$(6, 1)$};
+				[.{} ]
+			]
+			\edge node[midway,left] {$(6, 1)$};
+			[.{} ]
+			\edge node[midway,right] {$(3, 4)$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$(1, 2)$};
+		[.{}
+			\edge node[midway,left] {$(6, 1)$};
+			[.{} ]
+			\edge node[midway,right] {$(3, 4)$};
+			[.{} ]
+		]
+		\edge node[midway,right] {$(6, 1)$};
+		[.{} ]
+	]
+	\caption{Suffixbaum für $abaaba\$$ in effizienter Form}
+\end{abbildung}
+
+\chapter{Implementation}
+
+Als Sprache der Implementation wurde PASCAL gewählt. Die Kernstücke der Implementation sollen in diesem Teil vorgestellt werden, der vollständige Quelltext ist am Ende der Aufgabe zu finden. Er besteht aus der \texttt{UNIT} \texttt{suffixtree.pas} und dem \texttt{PROGRAM} \texttt{mississippi.pas}.\\
+Die Vorstellung der Implementation erfolgt in PASCAL, da die Syntax Pseudocode ähnlich ist und dabei Wert auf konkrete verwendete Konstrukte gelegt werden kann.\\
+
+\section{Modellierung}
+
+Es wurde bei der Implentation Wert auf einen imperativen Programmierstil gelegt, da dies der ursprüngliche Programmierstil der Sprache PASCAL war und dem Compiler so mehr Möglichkeiten bei der Optimisation geboten werden.\\
+Zunächst sollen die verwendeten Datentypen betrachtet werden.
+
+\subsection{Datentypen}
+
+Alle Datentypen bestehen aus \texttt{RECORD}s mit entsprechenden Feldern, auf die im Programm durch Zeiger auf die Objelte zugegriffen wird. Durch diese Modellierungsform wird das Risiko inkonsistente Zustände zu erzeugen vergrößert, was jedoch im Hinblick auf den Speicherverbrauch und die Laufzeit des Programms in Kauf genommen wird.
+
+\paragraph{Der Suffixbaum - \code{TSuffixTree}}
+
+Ein Suffixbaum ist definiert durch einen Zeiger auf die Wurzel vom Typ \code{TNode}, die Anzahl der Knoten dessen und die zum Aufbau verwendete Zeichenkette.
+
+\paragraph{Ein Knoten - \code{TNode}}
+
+Der Datentyp \code{TNode} ist ein Knoten des Baumes, der nur eine Referenz auf sein erstes Kind und seinen nächsten Nachbarn kennt. Dieser Datentyp wird auch als \textit{sibling list} bezeichnet. In einem Knoten sind auch die Informationen (d.h. der Abstand und die Länge) der Kante, welche zu ihm hinführt, vermerkt.\\
+Knoten werden nur bei Baumaufbau erzeugt und sofort am Ort ihrer Erzeugung mit ihren Werten belegt.
+
+\paragraph{Eine mögliche Lösung - \code{TResultList}}
+
+Durch \code{TResultList} wird eine Liste von Teilzeichenketten dargestellt. Sie ist einfach verkettet und dient als einfache Datenstruktur zum Speichern aller Teilzeichenketten, die der Suchbedingung entsprechen. Neben der Teilzeichenkette, welche noch unevaluiert als \code{TNodeList} vermerkt ist, speichert sie auch noch für schnellen Zugriff die Länge und Wiederholungen der Teilzeichenkette.
+
+\paragraph{Die Teilzeichenkette als Liste - \code{TNodeList}}
+
+Die ebenfalls einfach verkettete Liste \code{TNodelist} besteht aus einem Knoten, der die Informationen einer Kante hält, und einer Referenz auf den nächsten Knoten. Wichtig dabei ist die Anodnung der Knoten, da die das Aussehen der Teilkette, die durch die gesamte Liste repräsentiert wird, bestimmt.
+
+\subsection{Baumaufbau}
+
+\paragraph{\code{CreateSuffixTree(String) : TSuffixTree}:}
+
+Diese Funktion erstellt einen neuen Suffixbaum aus einem gegebener Zeichenkette. Sie geht wie in der obigen Modellierung bereits beschrieben vor:\\
+Dabei werden Schritt für Schritt beginnend mit der Ursprungskette immer kürzere Suffixe in den Baum eingefügt.
+
+\begin{lstlisting}
+FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
+VAR
+	i, j, k, len, offset, nodes : Integer;
+	root, cur, child, mid, newNode : NodePtr;
+BEGIN
+	s := s + '$'; //$ Das ist für mein Vim Syntax Highlighting
+
+	// Erstellen eines Knotens mit der Information des gesamten Strings
+	cur := GetMem(SizeOf(TNode));
+	cur^.offset := 0;
+	cur^.len := Length(s);
+	cur^.next_sibling := nil;
+	cur^.child := nil;
+
+	// Erstellung des Wurzelknotens
+	root := GetMem(SizeOf(TNode));
+	root^.offset := 0;
+	root^.len := 0;
+	root^.child := nil;
+	root^.next_sibling := nil;
+
+	// Anfügen des Strings an die Wurzel
+	AddChild(root, cur);
+	nodes := 2;
+
+	// Für alle verbleibenden Suffixe
+	FOR i := 2 TO Length(s) DO
+	BEGIN
+		// Beginne an der Wurzel
+		cur := root;
+		j := i;
+
+		WHILE j <= Length(s) DO
+		BEGIN
+			// Bestimme, ob bereits eine Kante mit dem Buchstaben
+			// von dem aktuellen Knoten ausgeht
+			child := GetNodeAt(cur^.child, s, s[j]);
+
+			// Wenn dies der Fall ist
+			IF child <> nil THEN
+			BEGIN
+				offset := child^.offset;
+				len := child^.len;
+
+				// Laufe den String Schritt für Schritt solange
+				// wie er identisch mit der Kante ist ab
+				k := j + 1;
+				WHILE (k - j < len) AND (s[k] = s[offset + 1 + k - j]) DO
+				BEGIN
+					Inc(k);
+				END;
+
+				// Wenn die Kante vollständig durchlaufen wurde
+				IF (k - j) = len THEN
+				BEGIN
+					// Führe dasselbe Verfahren am nächsten Knoten durch
+					cur := child;
+					j := k;
+				END
+				ELSE
+				BEGIN
+					// Ansonsten sind wir mitten in der Kante abgefallen und
+					// müssen diese teilen
+
+					// Erstelle eine neue Kante mit dem neuen Rest, der noch
+					// eingefügt werden muss
+					newNode := GetMem(SizeOf(TNode));
+					newNode^.offset := k - 1;
+					newNode^.len := Length(s) - newNode^.offset;
+					newNode^.child := nil;
+					newNode^.next_sibling := nil;
+
+					// Erstelle einen neuen Knoten, an dem die Abzweigung
+					// verläuft
+					mid := GetMem(SizeOf(TNode));
+					mid^.offset := child^.offset;
+					mid^.len := k - j;
+					mid^.child := nil;
+					mid^.next_sibling := nil;
+
+					// Passe die existierende Kante an
+					child^.offset := child^.offset + (k - j);
+					child^.len := child^.len - (k - j);
+
+					// Füge den mittleren Knoten in der Mitte ein
+					ReplaceChildWith(cur, child, mid);
+
+					// Füge die beiden Suffixreste an der neu erstellten Verzweigung an
+					AddChild(mid, newNode);
+					AddChild(mid, child);
+
+					nodes := nodes + 2;
+					break;
+				END;
+			END
+			ELSE
+			BEGIN
+				// Wenn noch keine Kante mit dem aktuellen Buchstaben beginnt,
+				// füge eine neue Kante an dem aktuellen Knoten an
+				child := GetMem(SizeOf(TNode));
+				child^.offset := j - 1;
+				child^.len := Length(s) - child^.offset;
+				child^.child := nil;
+				child^.next_sibling := nil;
+				AddChild(cur, child);
+
+				nodes := nodes + 1;
+				break;
+			END;
+		END;
+	END;
+	// Schließlich fehlt nur noch die Zuweisung der Felder des Suffixbaums
+	result.root := root;
+	result.s := s;
+	result.nodes := nodes;
+END;
+\end{lstlisting}
+
+\paragraph{\code{GetNodeAt(NodePtr, String, Char) : NodePtr}}
+
+Eine Funktion, die den Knoten, zu dem eine Kante mit spezifizierten dem Anfangsbuchstaben ausgeht, ermittelt. Falls kein Knoten mit diesem Buchstaben existiert, wird \code{nil} zurückgegeben.
+
+\begin{lstlisting}
+FUNCTION GetNodeAt(node : NodePtr; s : String; c : Char) : NodePtr;
+BEGIN
+	// Es wird davon ausgegegangen, dass kein
+	// Knoten mit dem Buchstaben existiert
+	result := nil;
+	WHILE node <> nil DO
+	BEGIN
+		// Solange es noch Nachbarn gibt:
+
+		// Wenn der Anfangsbuchstabe der KAnte mit dem gewünschten
+		// Anfangsbuchstaben übereinstimmt
+		IF s[node^.offset + 1] = c THEN
+		BEGIN
+			// Gebe diesen Knoten zurück
+			result := node;
+			exit;
+		END;
+
+		// Ansonsten: Suche weiter
+		node := node^.next_sibling;
+	END;
+END;
+\end{lstlisting}
+
+\paragraph{\code{ReplaceNodeWith(n, alt, neu : NodePtr)}}
+
+Eine Prozedur, die den in den Kindern des Knotens $n$ alle Instanzen des Knotens $alt$ mit Zeigern mit $neu$ ersetzt. Aufgrund
+der geringen Nutzung und der Übersichtlichkeit wird hier auf die Darstellung der Prozedur verzichtet, da sie nur bei der Spaltung einer Kante zum Einsatz kommt.
+
+\subsection{Baumdurchlauf}
+
+\paragraph{\code{FindSubstrings(l, k : Integer; tree : TSuffixTree)}}
+
+Eine Prozedur, die alle maximalen Teilzeichenketten von mindestens Länge $l$ und Häufigkeit $k$ in dem angegebenen Baum ermittelt und ausgibt. Sie dient nur als Hilfsfunktion für die Verkettung der Suche und Ausgabe der Teilzeichenketten
+
+\paragraph{\code{FindSubstringsInNode(l, k : Integer; ilist : NodeListPtr; node : NodePtr; curLen : Integer; s : String)}}
+
+Diese Funktion ist das Herzstück des Programms. Es ermittelt rekursiv für alle Knoten einer Ebene die gewünschten Informationen und fügt diese gegebenenfalls in der Ergebnisliste ein. Im Folgenden soll sie im Detail betrachtet werden:
+
+\begin{lstlisting}
+// Übergeben werden: Die Mindestlänge, Mindesthäufigkeit, aktueller Pfad
+FUNCTION FindSubstringsInNode(l, k : Integer; path : NodeListPtr;
+// Der aktuelle Knoten, die aktuelle Länge des Pfages und die Zeichenkette,
+// aus der der Baum erzeugt wurde
+	node : NodePtr; len : Integer; s : String) : ResultListPtr;
+BEGIN
+	// Es wird davon ausgegangen, dass keine
+	// Zeichenketten den Kriterien entsprechen
+	result := nil;
+
+	// Solange es noch Nachbarn gibt:
+	WHILE node <> nil DO
+	BEGIN
+		// Wenn sie mindestens l Zeichen lang ist und k-mal vorkommt
+		IF ((len + node^.len) >= l) AND (LeavesBelow(node) >= k) THEN
+		BEGIN
+			// Füge sie dem Ergebnis hinzu
+			result := Add(Add(node, path), node^.len + len, LeavesBelow(node), result, s);
+		END;
+
+		// Füge dem Ergebnis alle gefundenen Teilzeichenketten des Kindes
+		// des aktuellen Knotens hinzu
+		result := AddCollection(
+					FindSubstringsInNode(l, k, Add(node, path), node^.child, node^.len + len, s),
+					result, s);
+
+		// Führe dasselbe Verfahren für den nächsten Nachbarn durch
+		node := node^.next_sibling;
+	END;
+END;
+\end{lstlisting}
+
+Zentral für das Verständnis dieser Methode ist die Methode des Einfügens eines Elements in die Ergebnisliste, da sie die \textit{nicht trivial maximalen} Zeichenketten aussortiert.
+
+\paragraph{\code{Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr}}
+
+Diese Funktion fügt eine Teilkette der Liste nur dann hinzu, falls entweder eine neue Häufigkeit hat oder nicht bereits in einer anderen Teilkette zu finden ist. Ansonsten wird geprüft, ob die einzufügende Teilkette maximal ist. Wenn dies zutrifft wird die nicht maximale Zeichenkette durch die neu einzufügende ersetzt. Im anderen Fall wird die urprüngliche Liste beibehalten.\\
+Zur effizinten Bestimmung, ob eine Teilkette in einer anderen Teilkette vorkommt wird die Funktion \code{Pos(c, p : String) : Integer} aus der \texttt{UNIT} \texttt{SysUtils} verwendet. Sie gibt den Index von c in p zurück, falls c in p vorkommt und ansonsten -1.
+
+\begin{lstlisting}
+FUNCTION Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
+VAR
+	curNode : ResultListPtr;
+BEGIN
+	// Das Ergebnis sei die Ursprungsliste
+	result := list;
+
+	// Wenn die einzufügende Teilkette nicht nil ist
+	IF nodelist <> nil THEN
+	BEGIN
+		curNode := list;
+
+		// Solange die Ergebnisliste nicht leer ist
+		WHILE curNode <> nil DO
+		BEGIN
+			// Wenn die Anzahl der Wiederholungen der einzufügenden
+			// Zeichenkette und der aktuellen gleich sind.
+			IF curNode^.rep = k THEN
+			BEGIN
+				// Wenn die aktuell betrachtete Teilkette Bestandteil der
+				// einzufügenden ist
+				IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
+				BEGIN
+					// Ersetze die aktuelle Teilkette mit der einzufügenden,
+					// da die einzufügende maximaler ist
+					curNode^.nodes := nodelist;
+					curNode^.len := l;
+					exit;
+				END
+				// Ansonsten wenn die einzufügende Teilkette Bestandteil
+				// der aktuell betrachtenden ist
+				ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
+				BEGIN
+					// Breche den Vorgang ab, da die maximale Teilkette
+					// bereits vorhanden ist
+					exit;
+				END;
+			END;
+
+			// Wiederholde dasselbe für das nächste Element
+			curNode := curNode^.next;
+		END;
+
+		// Ansonsten wurde eine neue Teilkette gefunden und eingefügt
+		result := GetMem(SizeOf(TResultList));
+		result^.nodes := nodelist;
+		result^.len := l;
+		result^.rep := k;
+		result^.next := list;
+	END;
+END;
+\end{lstlisting}
+
+Die Funktion \code{AddCollection} fügt alle Elemente der einen Liste der anderen Liste durch \code{Add} hinzu, weswegen sie nich explizit erläutert werden muss.
+
+\subsection{Ergebnisaufbereitung und -ausgabe}
+
+\paragraph{\code{PrintFoundSubstrings(list : ResultListPtr; s : String)}}
+
+Diese Prozedur gibt die gefundenen Teilzeichenketten aus, indem die Teilkette erst aus dem Pfad aufgebaut werden muss bevor sie schließlich ausgegeben wird. Besonders wichtig dabei ist die Funktion \code{GetString}, welche aus einem Knoten einen die repräsentierte Teilzeichenkette extrahiert.
+
+\paragraph{\code{GetString(node : NodePtr; s : String)}}
+
+Gibt die Teizeichenkette zurück, die von einer Kante beschrieben wird.
+
+\begin{lstlisting}
+FUNCTION GetString(node : NodePtr; s : String) : String;
+VAR
+	i : Integer;
+BEGIN
+	// Zu Anfang ist keine Zeichenkette vorhanden
+	result := '';
+
+	// Wenn der Knoten existiert
+	IF node <> nil THEN
+	BEGIN
+		// Sollen alle Zeichen im Bereich der Kante
+		FOR i := node^.offset + 1 TO node^.offset + node^.len DO
+		BEGIN
+			// Zu einer Zeichenkette zusammengefügt werden
+			result := result + s[i];
+		END;
+	END;
+END;
+\end{lstlisting}
+
+\code{GetStringFrom} ist nach dem selben Prinzip implementiert. Dabei werden nicht einzelne Zeichen, sondern ganze Teilzeichenketten aneinandergefügt.
+
+\chapter{Verwendung}
+
+\section{Kompilieren und Ausführen des Programms}
+
+Das Programm wurde mit dem Free Pascal Compiler (FPC) kompiliert. Dabei wurden die compiler flags \verb!-O3! (Code Optimierung), \verb!-Mdelphi! (Implizite \code{result}-Variable) und \verb!-Px86_64! (64-bit Modus) verwendet. Der gesamte Befehl lautet:\\
+\begin{center}\verb!fpc -Px86_64 -Mdelphi -O3 mississippi.pas!\end{center}
+Dabei einsteht die ausführbare Datei \texttt{mississippi}\footnote{Auf Windows: \texttt{mississippi.exe}}, welche dann durch den Aufruf mit den entsprechenden Parametern ausgeführt wird:\\
+\begin{center}\verb!./mississippi <Datei> l k!\end{center}
+
+\section{Benchmark}
+
+Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenkette:\\
+
+\begin{center}
+
+\begin{tabular} {l r r}
+	\toprule
+	Zeichenkette & Länge & Zeit \\
+	\midrule
+	\texttt{abaaba} & 6 & 0 ms \\
+	\texttt{CAGGAGGATTA} & 11 & 0 ms \\
+	Mitochondriale DNA & 16571 & 6 ms \\
+	E.coli (Ausschnitt) & 100000 & 50 ms \\
+	E.coli (voll) & 4638675 & 6421 ms \\
+	menschl. Y-Chromosom & 25652566 & 58011 ms \\
+	menschl. X-Chromosom & 151100559 & 472691 ms \\
+	\bottomrule
+\end{tabular}
+
+\end{center}
+
+\section{Beispiele}
+
+Für die Zeichenkette \texttt{CAGGAGGATTA}, die in der Aufgabe als Beispiel verwendet wurde, ergeben sich für folgende Aufrufe die folgenden Ergebnisse:\\
+
+\begin{center}
+\begin{tabular}{rrrl}
+	\toprule
+	Länge & Wiederholungen & Zeit & Ergebnisse \\
+	\midrule
+	1 & 2 & 0 ms & A (4), AGGA (2), G (4), T (2) \\
+	2 & 2 & 0 ms & AGGA (2) \\
+	3 & 4 & 0 ms & - \\
+	\bottomrule
+\end{tabular}
+\end{center}
+
+Für die mitochondriale DNA des Menschen ergeben sich folgende Ergebnisse:\\
+
+\begin{center}
+	\begin{tabularx}{\linewidth}{rrrX}
+	\toprule
+	Länge & Wiederholungen & Zeit & Ergebnisse \\
+	\midrule
+	7 & 15 & 2 ms & AACCCCC (15), CCTAGCC (15) \\
+	10 & 3 & 3 ms & AACCCTAACA (3), AATTATAACA (3), ACCAACAAAC (3), ACCGCTAACA (3), TACTAAACCC (3), CTACTTCTCC (3), CCCCTCCCCA (3), CCCCCTCCCC (3), CCCCCCCCCC (3) \\
+	2 & 1000 & 5 ms & AA (1594), AT (1223), AC (1495), TT (1004), TC (1202), TA (1368), CT (1438), CA (1536), CC (1779) \\
+	\bottomrule
+\end{tabularx}
+\end{center}
+
+
+
+\chapter{Vollständiger Quelltext}
+
+\begin{lstlisting}
+PROGRAM Mississippi;
+
+USES SuffixTree, DateUtils, SysUtils;
+
+FUNCTION ReadFromFile(filename : String) : String;
+VAR
+	f : Text;
+BEGIN
+	Assign(f, filename);
+	Reset(f);
+	Read(f, result);
+END;
+
+VAR
+	tree : TSuffixTree;
+	s : String;
+	fromtime : TDateTime;
+	len, rep, ms : Integer;
+
+BEGIN
+	IF (ParamCount = 3) AND FileExists(ParamStr(1)) THEN
+	BEGIN
+		s := ReadFromFile(ParamStr(1));
+		len := StrtoInt(ParamStr(2));
+		rep := StrToInt(ParamStr(3));
+
+		IF (len > 0) AND (rep > 0) THEN
+		BEGIN
+			WriteLn('[Main] Creating suffix tree...');
+			FromTime := Now;
+			tree := CreateSuffixTree(s);
+			ms := MillisecondsBetween(Now, FromTime);
+			WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
+			WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
+
+			WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
+			FromTime := Now;
+			FindSubstrings(len, rep, tree);
+			ms := MillisecondsBetween(Now, FromTime);
+			WriteLn('[Main] Query for substrings repeated at least ',rep,' times ',
+				           'and are at least ',len,' characters long ',
+				           'took ',ms,'ms');
+
+			DisposeTree(tree);
+		END
+		ELSE
+		BEGIN
+			WriteLn('[Main] Please enter positive values for length and repetitions');
+		END;
+	END
+	ELSE
+	BEGIN
+		Writeln('[Main] Wrong number of parameters or file not found, please enter:');
+		WriteLn('[Main] ./prog filename length repetitions');
+	END;
+END.
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}
+UNIT SuffixTree;
+
+INTERFACE
+
+	TYPE
+		NodePtr = ^TNode;
+		NodeListPtr = ^TNodeList;
+		ResultListPtr = ^TResultList;
+
+		TNode = RECORD
+			offset       : Integer;
+			len          : Integer;
+			next_sibling : NodePtr;
+			child        : NodePtr;
+		END;
+
+		TNodeList = RECORD
+			node : NodePtr;
+			next : NodeListPtr;
+		END;
+
+		TResultList = RECORD
+			nodes : NodeListPtr;
+			len : Integer;
+			rep : Integer;
+			next : ResultListPtr;
+		END;
+
+		TSuffixTree = RECORD
+			root : NodePtr;
+			s    : String;
+			nodes : Integer;
+		END;
+
+	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
+	PROCEDURE DisposeTree(tree : TSuffixTree);
+	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
+	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
+
+IMPLEMENTATION USES SysUtils;
+
+	FUNCTION GetString(node : NodePtr; s : String) : String;
+	VAR
+		i : Integer;
+	BEGIN
+		// Zu Anfang ist keine Zeichenkette vorhanden
+		result := '';
+
+		// Wenn der Knoten existiert
+		IF node <> nil THEN
+		BEGIN
+			// Sollen alle Zeichen im Bereich der Kante
+			FOR i := node^.offset + 1 TO node^.offset + node^.len DO
+			BEGIN
+				// Zu einer Zeichenkette zusammengefügt werden
+				result := result + s[i];
+			END;
+		END;
+	END;
+
+	FUNCTION GetStringFrom(list : NodeListPtr; s : String) : String;
+	BEGIN
+		result := '';
+		WHILE list <> nil DO
+		BEGIN
+			result := GetString(list^.node, s) + result;
+			list := list^.next;
+		END;
+	END;
+
+	FUNCTION GetNodeAt(node : NodePtr; s : String; c : Char) : NodePtr;
+	BEGIN
+		// Es wird davon ausgegegangen, dass kein
+		// Knoten mit dem Buchstaben existiert
+		result := nil;
+		WHILE node <> nil DO
+		BEGIN
+			// Solange es noch Nachbarn gibt:
+
+			// Wenn der Anfangsbuchstabe der KAnte mit dem gewünschten
+			// Anfangsbuchstaben übereinstimmt
+			IF s[node^.offset + 1] = c THEN
+			BEGIN
+				// Gebe diesen Knoten zurück
+				result := node;
+				exit;
+			END;
+
+			// Ansonsten: Suche weiter
+			node := node^.next_sibling;
+		END;
+	END;
+
+	PROCEDURE AddChild(parent, child : NodePtr);
+	BEGIN
+		IF (parent <> nil) AND (child <> nil) THEN
+		BEGIN
+			child^.next_sibling := parent^.child;
+			parent^.child := child;
+		END;
+	END;
+
+	PROCEDURE ReplaceChildWith(node, oldChild, newChild : NodePtr);
+	VAR
+		currentChild, temp : NodePtr;
+	BEGIN
+		IF (node <> nil) AND (oldChild <> nil) AND (newChild <> nil) THEN
+		BEGIN
+			currentChild := node^.child;
+			IF currentChild = oldChild THEN
+			BEGIN
+				node^.child := newChild;
+				temp := newChild^.next_sibling;
+				newChild^.next_sibling := oldChild^.next_sibling;
+				oldChild^.next_sibling := temp;
+			END
+			ELSE
+			BEGIN
+				WHILE currentChild <> nil DO
+				BEGIN
+					IF currentChild^.next_sibling = oldChild THEN
+					BEGIN
+						currentChild^.next_sibling := newChild;
+						temp := newChild^.next_sibling;
+						newChild.next_sibling := oldChild.next_sibling;
+						oldChild^.next_sibling := temp;
+						exit;
+					END;
+					currentChild := currentChild^.next_sibling;
+				END;
+			END;
+		END
+		ELSE
+		BEGIN
+			WriteLn('[ReplaceChild]: An error occured; An argument was null');
+		END;
+	END;
+
+	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
+	VAR
+		i, j, k, len, offset, nodes : Integer;
+		root, cur, child, mid, newNode : NodePtr;
+	BEGIN
+		s := s + '$'; //$ Das ist für mein Vim Syntax Highlighting
+
+		// Erstellen eines Knotens mit der Information des gesamten Strings
+		cur := GetMem(SizeOf(TNode));
+		cur^.offset := 0;
+		cur^.len := Length(s);
+		cur^.next_sibling := nil;
+		cur^.child := nil;
+
+		// Erstellung des Wurzelknotens
+		root := GetMem(SizeOf(TNode));
+		root^.offset := 0;
+		root^.len := 0;
+		root^.child := nil;
+		root^.next_sibling := nil;
+
+		// Anfügen des Strings an die Wurzel
+		AddChild(root, cur);
+		nodes := 2;
+
+		// Für alle verbleibenden Suffixe
+		FOR i := 2 TO Length(s) DO
+		BEGIN
+			// Beginne an der Wurzel
+			cur := root;
+			j := i;
+
+			WHILE j <= Length(s) DO
+			BEGIN
+				// Bestimme, ob bereits eine Kante mit dem Buchstaben
+				// von dem aktuellen Knoten ausgeht
+				child := GetNodeAt(cur^.child, s, s[j]);
+
+				// Wenn dies der Fall ist
+				IF child <> nil THEN
+				BEGIN
+					offset := child^.offset;
+					len := child^.len;
+
+					// Laufe den String Schritt für Schritt solange
+					// wie er identisch mit der Kante ist ab
+					k := j + 1;
+					WHILE (k - j < len) AND (s[k] = s[offset + 1 + k - j]) DO
+					BEGIN
+						Inc(k);
+					END;
+
+					// Wenn die Kante vollständig durchlaufen wurde
+					IF (k - j) = len THEN
+					BEGIN
+						// Führe dasselbe Verfahren am nächsten Knoten durch
+						cur := child;
+						j := k;
+					END
+					ELSE
+					BEGIN
+						// Ansonsten sind wir mitten in der Kante abgefallen und
+						// müssen diese teilen
+
+						// Erstelle eine neue Kante mit dem neuen Rest, der noch
+						// eingefügt werden muss
+						newNode := GetMem(SizeOf(TNode));
+						newNode^.offset := k - 1;
+						newNode^.len := Length(s) - newNode^.offset;
+						newNode^.child := nil;
+						newNode^.next_sibling := nil;
+
+						// Erstelle einen neuen Knoten, an dem die Abzweigung
+						// verläuft
+						mid := GetMem(SizeOf(TNode));
+						mid^.offset := child^.offset;
+						mid^.len := k - j;
+						mid^.child := nil;
+						mid^.next_sibling := nil;
+
+						// Passe die existierende Kante an
+						child^.offset := child^.offset + (k - j);
+						child^.len := child^.len - (k - j);
+
+						// Füge den mittleren Knoten in der Mitte ein
+						ReplaceChildWith(cur, child, mid);
+
+						// Füge die beiden Suffixreste an der neu erstellten Verzweigung an
+						AddChild(mid, newNode);
+						AddChild(mid, child);
+
+						nodes := nodes + 2;
+						break;
+					END;
+				END
+				ELSE
+				BEGIN
+					// Wenn noch keine Kante mit dem aktuellen Buchstaben beginnt,
+					// füge eine neue Kante an dem aktuellen Knoten an
+					child := GetMem(SizeOf(TNode));
+					child^.offset := j - 1;
+					child^.len := Length(s) - child^.offset;
+					child^.child := nil;
+					child^.next_sibling := nil;
+					AddChild(cur, child);
+
+					nodes := nodes + 1;
+					break;
+				END;
+			END;
+		END;
+		// Schließlich fehlt nur noch die Zuweisung der Felder des Suffixbaums
+		result.root := root;
+		result.s := s;
+		result.nodes := nodes;
+	END;
+
+	FUNCTION LeavesAt(node : NodePtr) : Integer;
+	BEGIN
+		result := 1;
+		IF node <> nil THEN
+		BEGIN
+			IF node^.child <> nil THEN
+			BEGIN
+				result := LeavesAt(node^.child);
+			END;
+			IF node^.next_sibling <> nil THEN
+			BEGIN
+				result := result + LeavesAt(node^.next_sibling);
+			END;
+		END;
+	END;
+
+	FUNCTION LeavesBelow(node : NodePtr) : Integer;
+	BEGIN
+		result := 1;
+		IF node <> nil THEN
+		BEGIN
+			result := LeavesAt(node^.child);
+		END;
+	END;
+
+	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
+	BEGIN
+		result := LeavesAt(tree.root);
+	END;
+
+	FUNCTION Add(node : NodePtr; list : NodeListPtr) : NodeListPtr; OVERLOAD;
+	BEGIN
+		result := list;
+		IF node <> nil THEN
+		BEGIN
+			result := GetMem(SizeOf(TNodeList));
+			result^.node := node;
+			result^.next := list;
+		END;
+	END;
+
+	FUNCTION Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
+	VAR
+		curNode : ResultListPtr;
+	BEGIN
+		// Das Ergebnis sei die Ursprungsliste
+		result := list;
+
+		// Wenn die einzufügende Teilkette nicht nil ist
+		IF nodelist <> nil THEN
+		BEGIN
+			curNode := list;
+
+			// Solange die Ergebnisliste nicht leer ist
+			WHILE curNode <> nil DO
+			BEGIN
+				// Wenn die Anzahl der Wiederholungen der einzufügenden
+				// Zeichenkette und der aktuellen gleich sind.
+				IF curNode^.rep = k THEN
+				BEGIN
+					// Wenn die aktuell betrachtete Teilkette Bestandteil der
+					// einzufügenden ist
+					IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
+					BEGIN
+						// Ersetze die aktuelle Teilkette mit der einzufügenden,
+						// da die einzufügende maximaler ist
+						curNode^.nodes := nodelist;
+						curNode^.len := l;
+						exit;
+					END
+					// Ansonsten wenn die einzufügende Teilkette Bestandteil
+					// der aktuell betrachtenden ist
+					ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
+					BEGIN
+						// Breche den Vorgang ab, da die maximale Teilkette
+						// bereits vorhanden ist
+						exit;
+					END;
+				END;
+
+				// Wiederholde dasselbe für das nächste Element
+				curNode := curNode^.next;
+			END;
+
+			// Ansonsten wurde eine neue Teilkette gefunden und eingefügt
+			result := GetMem(SizeOf(TResultList));
+			result^.nodes := nodelist;
+			result^.len := l;
+			result^.rep := k;
+			result^.next := list;
+		END;
+	END;
+
+	FUNCTION AddCollection(newlist, list : ResultListPtr; s : String) : ResultListPtr;
+	BEGIN
+		result := list;
+		IF result <> nil THEN
+		BEGIN
+			WHILE newList <> nil DO
+			BEGIN
+				result := Add(newList^.nodes, newList^.len, newlist^.rep, result, s);
+				newList := newList^.next;
+			END;
+		END
+		ELSE
+		BEGIN
+			result := newList;
+		END;
+	END;
+
+	// Übergeben werden: Die Mindestlänge, Mindesthäufigkeit, aktueller Pfad
+	FUNCTION FindSubstringsInNode(l, k : Integer; path : NodeListPtr;
+	// Der aktuelle Knoten, die aktuelle Länge des Pfages und die Zeichenkette,
+	// aus der der Baum erzeugt wurde
+		node : NodePtr; len : Integer; s : String) : ResultListPtr;
+	BEGIN
+		// Es wird davon ausgegangen, dass keine
+		// Zeichenketten den Kriterien entsprechen
+		result := nil;
+
+		// Solange es noch Nachbarn gibt:
+		WHILE node <> nil DO
+		BEGIN
+			// Wenn sie mindestens l Zeichen lang ist und k-mal vorkommt
+			IF ((len + node^.len) >= l) AND (LeavesBelow(node) >= k) THEN
+			BEGIN
+				// Füge sie dem Ergebnis hinzu
+				result := Add(Add(node, path), node^.len + len, LeavesBelow(node), result, s);
+			END;
+
+			// Füge dem Ergebnis alle gefundenen Teilzeichenketten des Kindes
+			// des aktuellen Knotens hinzu
+			result := AddCollection(
+						FindSubstringsInNode(l, k, Add(node, path), node^.child, node^.len + len, s),
+						result, s);
+
+			// Führe dasselbe Verfahren für den nächsten Nachbarn durch
+			node := node^.next_sibling;
+		END;
+	END;
+
+	PROCEDURE PrintFoundStrings(list : ResultListPtr; s : String);
+	BEGIN
+		WHILE list <> nil DO
+		BEGIN
+			WriteLn(GetStringFrom(list^.nodes, s), ' (', list^.rep, ')');
+			list := list^.next;
+		END;
+	END;
+
+	PROCEDURE DisposeResultList(list : ResultListPtr); FORWARD;
+
+	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
+	VAR
+		list : ResultListPtr;
+	BEGIN
+		list := FindSubstringsInNode(len, rep, nil, tree.root, 0, tree.s);
+
+		PrintFoundStrings(list, tree.s);
+	END;
+
+	PROCEDURE DisposeNodeList(nlist : NodeListPtr);
+	BEGIN
+		IF nList <> nil THEN
+		BEGIN
+			DisposeNodeList(nList^.next);
+			FreeMem(nList);
+		END;
+	END;
+
+	PROCEDURE DisposeResultList(list : ResultListPtr);
+	BEGIN
+		IF list <> nil THEN
+		BEGIN
+			DisposeNodeList(list^.nodes);
+			DisposeResultList(list^.next);
+			FreeMem(list);
+		END;
+	END;
+
+	PROCEDURE DisposeNode(node : NodePtr);
+	BEGIN
+		IF node <> nil THEN
+		BEGIN
+			DisposeNode(node^.child);
+			DisposeNode(node^.next_sibling);
+			FreeMem(node);
+		END;
+	END;
+
+	PROCEDURE DisposeTree(tree : TSuffixTree);
+	BEGIN
+		DisposeNode(tree.root);
+	END;
+
+BEGIN
+END.
+\end{lstlisting}
 
 \end{document}
