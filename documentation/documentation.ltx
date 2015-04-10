@@ -730,10 +730,9 @@ Dabei einsteht die ausführbare Datei \texttt{mississippi}\footnote{Auf Windows:
 
 \section{Benchmark}
 
-Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenkette:\\
+Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenketten. Für diese Tests wurde ein Computer mit Intel i7-4700MQ 2.4 GHz 4-Kern-Prozessor und 16GB DDR3 Arbeitsspeicher verwendet. \\
 
 \begin{center}
-
 \begin{tabular} {l r r}
 	\toprule
 	Zeichenkette & Länge & Zeit \\
@@ -747,8 +746,9 @@ Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeic
 	menschl. X-Chromosom & 151100559 & 472691 ms \\
 	\bottomrule
 \end{tabular}
-
 \end{center}
+
+Neben dem Beweis, dass Männer einfacher gestrickt sind als Frauen, kann hier beobachtet werden, dass der Algorithmus zum Suffixbaumaufbau in etwa quadratischer Zeit zur Länge des Strings läuft.
 
 \section{Beispiele}
 
@@ -766,7 +766,7 @@ Für die Zeichenkette \texttt{CAGGAGGATTA}, die in der Aufgabe als Beispiel verw
 \end{tabular}
 \end{center}
 
-Für die mitochondriale DNA des Menschen ergeben sich folgende Ergebnisse:\\
+Für die mitochondriale DNA des Menschen ergeben sich folgende Beispielergebnisse: \\
 
 \begin{center}
 	\begin{tabularx}{\linewidth}{rrrX}
@@ -780,13 +780,62 @@ Für die mitochondriale DNA des Menschen ergeben sich folgende Ergebnisse:\\
 \end{tabularx}
 \end{center}
 
+Schließlich folgen noch ein paar Beispiele für die ersten 100.000 Zeichen des E.coli Genoms:
 
+\begin{center}
+	\begin{tabularx}{\linewidth}{rrrX}
+	\toprule
+	Länge & Wiederholungen & Zeit & Ergebnisse \\
+	\midrule
+	2 & 8000 & 23 ms & GC (8852), CG (8017) \\
+	20 & 3 & 14 ms & TGCCGGATGCGCTTTGCTTATCCGGCCTAC-AAAATCGCAGCG (3) \\
+	80 & 2 & 17 ms & GTAGGCCTGATAAGACGCGCCAGCGTCGCA-TCAGGCGTTGAATGCCGGATGCGCTTTGCT-TATCCGGCCTACAAAATCGCAGCG (2) \\
+	\bottomrule
+\end{tabularx}
+\end{center}
+
+Die Beispiele der restlichen Teilzeichenketten würden den Rahmen dieser Dokumentation sprengen, weswegen sie ohne Ergebnismenge präsentiert werden:\\
+
+Für das vollständige E.coli Genom:
+
+\begin{center}
+	\begin{tabular}{rrr}
+	\toprule
+	Länge & Wiederholungen & Zeit \\
+	\midrule
+	20 & 20 & 990ms \\
+	50 & 20 & 1000 ms \\
+	1000 & 2 & 22082 ms \\
+	2500 & 2 & 1092 ms \\
+	\bottomrule
+\end{tabular}
+\end{center}
+
+Bei den aufändigeren Beispielen wird nun deutlich, dass die Suche auf seht kurze oder sehr lange Zeichenketten schnell und effizient ist, wohingegen die Suche bei Parametern, die viele potentielle Teilzeichenketten zulassen, sogar \textit{langsamer ist als der Baumaufbau}.\\
+Als letzte Tabelle soll nun die Suche nach Suffixen im Y-Chromosom des Menschen gezeigt werden:\\
+
+\begin{center}
+	\begin{tabular}{rrr}
+	\toprule
+	Länge & Wiederholungen & Zeit \\
+	\midrule
+	2 & 1000000 & 19576 ms \\
+	50 & 200 & 6790ms \\
+	500 & 500 & 6934 ms \\
+	\bottomrule
+\end{tabular}
+\end{center}
+
+Für Beispielsuchen im menschlichen X-Chromosom besitzt der Rechner auf dem die Testdurchläufe durchgeführt wurden nicht genug Arbeitsspeicher, weswegen sie nicht gezeigt werden können.
+
+%\section{Fazit}
+
+%Zusammenfassend lässt sich nun sagen, dass das Progrmam die gestellten Anforderungen erfüllt und sogar übertrifft.
 
 \chapter{Vollständiger Quelltext}
 
 \begin{lstlisting}
 PROGRAM Mississippi;
-
 USES SuffixTree, DateUtils, SysUtils;
 
 FUNCTION ReadFromFile(filename : String) : String;
@@ -819,7 +868,6 @@ BEGIN
 			ms := MillisecondsBetween(Now, FromTime);
 			WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
 			WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
-
 			WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
 			FromTime := Now;
 			FindSubstrings(len, rep, tree);
