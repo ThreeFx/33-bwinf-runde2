@@ -143,7 +143,7 @@ IMPLEMENTATION USES SysUtils;
 		i, j, k, len, offset, nodes : Integer;
 		root, cur, child, mid, newNode : NodePtr;
 	BEGIN
-		s := s + '$'; //$ Das ist für mein Vim Syntax Highlighting
+		s := s + '$';
 
 		// Erstellen eines Knotens mit der Information des gesamten Strings
 		cur := GetMem(SizeOf(TNode));
