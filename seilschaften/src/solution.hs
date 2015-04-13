@@ -33,7 +33,7 @@ infixr 3 .&&.
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 p .&&. q = \x -> p x && q x
 
---main = putStrLn . stringify . solve . parse . lines =<< readFile . head =<< getArgs
+main = putStr . stringify . solve . parse . lines =<< readFile . head =<< getArgs
 
 parse :: [String] -> Problem
 parse (x:xs) = uncurry (Problem (read x) 0 Nothing)
@@ -54,7 +54,10 @@ parseWeight _ = error "Wrong format"
 
 stringify :: Maybe Problem -> String
 stringify Nothing = "No solution found!"
-stringify (Just problem) = unlines $ (display problem:) $ stringify' problem []
+stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
+                                            ++ display p
+                                            ++ "\nMoves needed: "
+                                            ++ show (numberSteps p)]
     where
         stringify' problem@(Problem _ _ Nothing _ _) xs = display problem : xs
         stringify' (Problem d moves (Just p@(Problem _ m _ u b)) up down) xs =
@@ -70,14 +73,15 @@ stringify (Just problem) = unlines $ (display problem:) $ stringify' problem []
               ++ show (moves - m, moves)
                   where
                       useTrick
-                        | moves - m == 2 = "using weights "
+                        | moves - m == 2 = "using weights: ["
                                          ++ (intercalate ", "
-                                            $ map prettify
+                                            $ map prettify'
                                             $ head
-                                            $ filter (((<=d) .&&. (>0)) . ((-) `on` weight) (intersect down u))
+                                            -- $ filter (\x -> weight (intersect down u) - weight x <= d && weight (intersect down u) - weight x > 0)
                                             $ powerset
                                             $ filter isWeight
                                             $ up ++ down)
+                                         ++ "]"
                         | otherwise = ""
 
 display :: Problem -> String
@@ -86,6 +90,9 @@ display (Problem d moves _ up down) = "Up:\n[\n" ++ unlines (map prettify up) ++
 prettify :: Weight -> String
 prettify (P p _) = "  Person " ++ show p
 prettify (W w _) = "  Weight " ++ show w
+
+prettify' :: Weight -> String
+prettify' = drop 2 . prettify
 
 
 
