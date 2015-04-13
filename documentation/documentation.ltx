@@ -310,7 +310,7 @@ nicht effizient ist, ist sofort ersichtlich. Dieses Problem soll durch eine simp
 \subsection{Optimierung 1: Substringssuche nach Baumaufbau}
 
 Der Suffixbaum, der zuvor für jede Teilzeichenkette durchlaufen wurde, soll nun genau einmal komplett durchlaufen werden, wobei trotzdem jede Teilzeichenkette beachtet werden soll. So soll nicht jede Teilzeichenkette generiert und danach erst geprüft werden, sondern andersherum. Grundlage dafür ist ein pre-order Durchlauf des Baumes. Durch den Pfad durch Kanten und Knoten wird dabei implizit eine Teilkette dargestellt, für welche direkt ermittelt werden kann ob sie der Bedingung unterliegt.\\
-Dabei ist aber zu beachten, dass immer noch jede einzelne Teilkette betrachtet wird und die Bestimmung von 
+Dabei ist aber zu beachten, dass immer noch jede einzelne Teilkette betrachtet werden muss, was die folgende Optimierung verändert.
 
 \subsection{Optimierung 2: Eliminierung der trivial maximalen Zeichenkette}
 
