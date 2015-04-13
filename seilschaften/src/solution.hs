@@ -35,8 +35,8 @@ p .&&. q = \x -> p x && q x
 
 main = putStr . stringify . solve . parse . lines =<< readFile . head =<< getArgs
 
-parse :: [String] -> Problem
-parse (x:xs) = uncurry (Problem (read x) 0 Nothing)
+parse :: [String] -> BaseProblem
+parse (x:xs) = uncurry (BaseProblem (read x))
              $ (\(a, b) -> (map fst a, map fst b))
              $ partition snd
              $ map parseWeight
@@ -64,7 +64,7 @@ stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
             stringify' p
             $ flip (:) xs
             $ "Transfer down: "
-              ++ useTrick
+--              ++ useTrick
               ++ "\n[\n"
               ++ unlines (map prettify $ intersect down u)
               ++ "]\nTransfer up:\n[\n"
@@ -72,17 +72,17 @@ stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
               ++ "]\nMoves (needed/total): "
               ++ show (moves - m, moves)
                   where
-                      useTrick
-                        | moves - m == 2 = "using weights: ["
-                                         ++ (intercalate ", "
-                                            $ map prettify'
-                                            $ head
-                                            -- $ filter (\x -> weight (intersect down u) - weight x <= d && weight (intersect down u) - weight x > 0)
-                                            $ powerset
-                                            $ filter isWeight
-                                            $ up ++ down)
-                                         ++ "]"
-                        | otherwise = ""
+--                      useTrick
+--                        | moves - m == 2 = "using weights: ["
+--                                         ++ (intercalate ", "
+--                                            $ map prettify'
+--                                            $ head
+--                                            -- $ filter (\x -> weight (intersect down u) - weight x <= d && weight (intersect down u) - weight x > 0)
+--                                            $ powerset
+--                                            $ filter isWeight
+--                                            $ up ++ down)
+--                                         ++ "]"
+--                        | otherwise = ""
 
 display :: Problem -> String
 display (Problem d moves _ up down) = "Up:\n[\n" ++ unlines (map prettify up) ++ "]\nDown:\n[\n" ++ unlines (map prettify down) ++ "]"
