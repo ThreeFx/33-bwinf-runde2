@@ -1,135 +1,173 @@
 module Main where
 
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad (filterM)
 import Data.Function (on)
-import Data.List ((\\), sortBy)
+import Data.List ((\\), intercalate, intersect, minimumBy, partition, union)
+import Data.Ord (comparing)
 import System.Environment (getArgs)
 
--- To implement :
--- solvable (weight differences between powerset members smaller than threshold + weight of all weights (non-people things)
--- solve (knapsack problem variant): fewest "moves" inside threshold to get from a to b
-
-data Pos = Up | Down deriving (Show, Eq, Read)
+type ID = Int
 
 -- | A simple datatype for a weight. It consists of an integer weight and a
 -- | boolean value whether it is a person or not. It also has a
 -- | position indicating whether it is up or down.
-data Weight = W Bool Int Pos deriving (Show, Eq)
+data Weight = P !Int !ID | W !Int !ID deriving Show
+
+instance Eq Weight where
+    (P _ id) == (P _ id') = id == id'
+    (W _ id) == (W _ id') = id == id'
+    _        == _         = False
+
+data Tree a = Node (Tree a) a (Tree a)
 
 -- | A problem is determined by its state and a weight threshold.
-data Problem = P [Weight] Int deriving Show
+data BaseProblem = BaseProblem Int [Weight] [Weight] deriving Show
+
+-- | The general problem also keeps track of the current number of moves and
+-- | the current path.
+data Problem = Problem Int Int (Maybe Problem) [Weight] [Weight] deriving Show
 
 infixr 3 .&&.
 
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 p .&&. q = \x -> p x && q x
 
-main = putStrLn . stringify . solve . parse . lines =<< readFile . head =<< getArgs
-
-stringify [] = "No possible solution"
-stringify xs = unlines $ map show xs
+--main = putStrLn . stringify . solve . parse . lines =<< readFile . head =<< getArgs
 
 parse :: [String] -> Problem
-parse (x:xs) = P (map (parseWeight . words) xs) (read x)
+parse (x:xs) = uncurry (Problem (read x) 0 Nothing)
+             $ (\(a, b) -> (map fst a, map fst b))
+             $ partition snd
+             $ map parseWeight
+             $ zip [0..]
+             $ map words xs
 
-parseWeight :: [String] -> Weight
-parseWeight [typ, weight, pos] = W (parse' typ) (read weight) (parse'' pos)
-	where
-		parse' "P" = True
-		parse' _ = False
-		parse'' "^" = Up
-		parse'' _ = Down
-parseWeight _                  = error "Wrong format"
+parseWeight :: (Int, [String]) -> (Weight, Bool)
+parseWeight (id, [typ, weight, pos]) = (parse' typ (read weight) id, parse'' pos)
+    where
+        parse' "P" = P
+        parse' _ = W
+        parse'' "^" = True
+        parse'' _ = False
+parseWeight _ = error "Wrong format"
 
-solve :: Problem -> [[Weight]]
-solve problem@(P weights threshold)
-	| isSolvable = solution
-	| otherwise  = []
-		where
-			solution = flip getSteps threshold $ relevantWeights weights
-			isSolvable = all (<= threshold)
-			             $ map abs
-			             $ (\x -> zipWith (-) x (tail x))
-			             $ map getWeightOf
-			             $ map fst
-			             $ filter transportedPerson
-			             $ zip solution (tail solution)
-				where
-					transportedPerson (s1,s2) = any isPerson $ s2 \\ s1
+stringify :: Maybe Problem -> String
+stringify Nothing = "No solution found!"
+stringify (Just problem) = unlines $ (display problem:) $ stringify' problem []
+    where
+        stringify' problem@(Problem _ _ Nothing _ _) xs = display problem : xs
+        stringify' (Problem d moves (Just p@(Problem _ m _ u b)) up down) xs =
+            stringify' p
+            $ flip (:) xs
+            $ "Transfer down: "
+              ++ useTrick
+              ++ "\n[\n"
+              ++ unlines (map prettify $ intersect down u)
+              ++ "]\nTransfer up:\n[\n"
+              ++ unlines (map prettify $ intersect up b)
+              ++ "]\nMoves (needed/total): "
+              ++ show (moves - m, moves)
+                  where
+                      useTrick
+                        | moves - m == 2 = "using weights "
+                                         ++ (intercalate ", "
+                                            $ map prettify
+                                            $ head
+                                            $ filter (((<=d) .&&. (>0)) . ((-) `on` weight) (intersect down u))
+                                            $ powerset
+                                            $ filter isWeight
+                                            $ up ++ down)
+                        | otherwise = ""
 
-getSteps :: [([Weight], Int)] -> Int -> [[Weight]]
-getSteps [] _ = []
-getSteps (state:states) threshold = fst state : (flip getSteps threshold $ dropUntilLast (valid threshold state) states)
-	where
-		valid t (state, w0) (newState, w1) = w1 - w0 <= t
-		                                     || (all isWeight $ (newState \\ state) ++ (state \\ newState))
-		                                        && filter isPerson state == filter isPerson newState
+display :: Problem -> String
+display (Problem d moves _ up down) = "Up:\n[\n" ++ unlines (map prettify up) ++ "]\nDown:\n[\n" ++ unlines (map prettify down) ++ "]"
 
-dropUntilLast :: (a -> Bool) -> [a] -> [a]
-dropUntilLast p [] = []
-dropUntilLast p all@(_:xs)
-	| any p xs = dropUntilLast p xs
-	| otherwise = all
-
--- | Returns all relevant weights including their total weight.
--- | Relevant are all weights including the goal and the initial position.
-relevantWeights :: [Weight] -> [([Weight], Int)]
-relevantWeights w = filter (pred . snd)
-                    . map (\x -> (x, getWeightOf x))
-                    $ allWeights w
-                    	where
-                    		pred = (>= getWeightBy (isDown .&&. isPerson) w)
-                    		         .&&. (<= getWeightBy isPerson w)
+prettify :: Weight -> String
+prettify (P p _) = "  Person " ++ show p
+prettify (W w _) = "  Weight " ++ show w
 
 
-getWeightOf :: [Weight] -> Int
-getWeightOf = foldr (\w acc -> weight w + acc) 0
 
-weight :: Weight -> Int
-weight (W _ w _) = w
+solve :: BaseProblem -> Maybe Problem
+solve problem
+    | null $ getPossibleSolutions problem = Nothing
+    | otherwise = Just $ minimumBy (comparing numberSteps) $ getPossibleSolutions problem
 
-getWeightBy :: (Weight -> Bool) -> [Weight] -> Int
-getWeightBy p = getWeightOf . filter p
+getPossibleSolutions :: BaseProblem -> [Problem]
+getPossibleSolutions (BaseProblem d up down) =
+    filter ((==numberPeople) . length . filter isPerson . getDown)
+    . simulateProblem
+    $ [Problem d 0 Nothing up down]
+        where
+            numberPeople = length $ filter isPerson $ up `union` down
 
--- | Predicates for weights
-isUp :: Weight -> Bool
-isUp (W _ _ p) = p == Up
+simulateProblem :: [Problem] -> [Problem]
+simulateProblem states
+    | null $ states >>= possibleMoves = states
+    | otherwise                       = (++) states $ simulateProblem $ states >>= possibleMoves
 
-isDown :: Weight -> Bool
-isDown = not . isUp
+possibleMoves :: Problem -> [Problem]
+possibleMoves p@(Problem d moves current up down)
+    | hasPerson down = (++) (specialCase p)
+                     $ map (\x -> makeProblem d moves (newMoves up x) current up down x)
+                     $ filter (((<=d) .&&. (>0)) . uncurry ((-) `on` weight))
+                     $ [(fromUp, toUp) | fromUp <- powerset up,
+                                         toUp <- powerset $ down `union` filter isWeight up,
+                                         null $ intersect fromUp toUp]
+    | otherwise      = specialCase p
+        where
+            newMoves up (_, toUp)
+                | null $ intersect up toUp = 1
+                | otherwise = 2
+
+specialCase :: Problem -> [Problem]
+specialCase (Problem d moves current up down) =
+    map (makeProblem d moves 2 current up down . flip (,) [] . flip (\\) down)
+    $ filter (isValid d up)
+    $ map (++ down)
+    $ powerset
+    $ filter isPerson up
+
+isValid :: Int -> [Weight] -> [Weight] -> Bool
+isValid d up down =
+    any (((<=d) .&&. (>0)) . (((-) `on` weight) transferred))
+    $ powerset
+    $ filter isWeight up
+        where
+            transferred = intersect up down
+
+makeProblem :: Int -> Int -> Int -> Maybe Problem -> [Weight] -> [Weight] -> ([Weight], [Weight]) -> Problem
+makeProblem d moves toAdd current up down (fromUp, toUp) =
+    Problem d (moves + toAdd) (Just $ Problem d moves current up down) (toUp `union` (up \\ fromUp)) (fromUp `union` (down \\ toUp))
+
+
+-- | Auxiliary functions
+powerset :: [Weight] -> [[Weight]]
+powerset = filterM (const [True, False])
+
+numberSteps :: Problem -> Int
+numberSteps (Problem _ steps _ _ _) = steps
+
+getDown :: Problem -> [Weight]
+getDown (Problem _ _ _ _ down) = down
+
+weight :: [Weight] -> Int
+weight = foldr (\x acc -> getWeight x + acc) 0
+
+getWeight :: Weight -> Int
+getWeight (P p _) = p
+getWeight (W w _) = w
 
 isPerson :: Weight -> Bool
-isPerson (W p _ _) = p
+isPerson (P _ _) = True
+isPerson (W _ _) = False
 
 isWeight :: Weight -> Bool
 isWeight = not . isPerson
 
-hasPerson :: Weight -> [Weight] -> Bool
-hasPerson (W _ _ p) = any (\(W t _ q) -> t && p == q)
+hasPerson :: [Weight] -> Bool
+hasPerson = any isPerson
 
-allWeights :: [Weight] -> [[Weight]]
-allWeights = sortBy (compare `on` getWeightOf) . filterM (const [True, False])
-
-test0 :: Problem
-test0 = P [W False 75 Up, W True 90 Up, W True 105 Up, W True 195 Up] 15
-
-test1 :: Problem
-test1 = P [W True 10 Down, W True 20 Down, W True 59 Down, W False 52 Down] 0
-
-test2 :: Problem
-test2 = P [W True 109 Up, W False 120 Down, W True 156 Up, W True 55 Up,
-           W True 149 Up, W True 185 Up, W False 98 Down] 20
-
-test3 :: Problem
-test3 = P [W True 195 Up, W True 105 Up, W True 90 Up, W False 75 Up,
-           W True 137 Up, W True 55 Up, W True 101 Down, W True 185 Up,
-           W True 199 Up] 15
-
-test4 :: Problem
-test4 = P [W True 2 Up, W False 1 Down] 1
-
-test5 :: Problem
-test5 = P [W True 1 Up,W True 2 Up,W True 4 Up,W True 8 Up,W True 16 Up,
-           W True 32 Up,W True 64 Up,W True 128 Up,W True 256 Up] 20
-
-test6 = P [W True 10 Up, W False 20 Down] 5
+test0 :: BaseProblem
+test0 = BaseProblem 15 [W 75 0, P 90 1, P 105 2, P 195 3] []
