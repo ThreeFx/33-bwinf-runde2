@@ -1,9 +1,11 @@
 module Main where
 
-import Control.Applicative ((<$>), (<*>), pure)
+import Control.Applicative ((<$>), (<*>))
+import Control.DeepSeq (NFData, rnf)
 import Control.Monad (filterM)
+import Control.Parallel.Strategies (parMap, rdeepseq)
 import Data.Function (on)
-import Data.List ((\\), intercalate, intersect, minimumBy, partition, union)
+import Data.List ((\\), intercalate, intersect, maximumBy, minimumBy, partition, subsequences, union)
 import Data.Ord (comparing)
 import System.Environment (getArgs)
 
@@ -19,6 +21,10 @@ instance Eq Weight where
     (W _ id) == (W _ id') = id == id'
     _        == _         = False
 
+instance NFData Weight where
+    rnf (P p id) = rnf p `seq` rnf id `seq` ()
+    rnf (W w id) = rnf w `seq` rnf id `seq` ()
+
 data Tree a = Node (Tree a) a (Tree a)
 
 -- | A problem is determined by its state and a weight threshold.
@@ -26,7 +32,10 @@ data BaseProblem = BaseProblem Int [Weight] [Weight] deriving Show
 
 -- | The general problem also keeps track of the current number of moves and
 -- | the current path.
-data Problem = Problem Int Int (Maybe Problem) [Weight] [Weight] deriving Show
+data Problem = Problem !Int !Int (Maybe Problem) ![Weight] ![Weight] deriving Show
+
+instance NFData Problem where
+    rnf (Problem d moves prev up down) = rnf d `seq` rnf moves `seq` rnf up `seq` rnf down `seq` ()
 
 infixr 3 .&&.
 
@@ -71,7 +80,7 @@ stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
               ++ unlines (map prettify $ intersect up b)
               ++ "]\nMoves (needed/total): "
               ++ show (moves - m, moves)
-                  where
+--                  where
 --                      useTrick
 --                        | moves - m == 2 = "using weights: ["
 --                                         ++ (intercalate ", "
@@ -110,36 +119,42 @@ getPossibleSolutions (BaseProblem d up down) =
             numberPeople = length $ filter isPerson $ up `union` down
 
 simulateProblem :: [Problem] -> [Problem]
-simulateProblem states
-    | null $ states >>= possibleMoves = states
-    | otherwise                       = (++) states $ simulateProblem $ states >>= possibleMoves
+simulateProblem [] = []
+simulateProblem states = (++) states
+                           $ simulateProblem
+                           $ concat
+                           $ parMap rdeepseq possibleMoves states
 
 possibleMoves :: Problem -> [Problem]
 possibleMoves p@(Problem d moves current up down)
-    | hasPerson down = (++) (specialCase p)
+    | hasPerson down = removeBadSolutions
+                     $ (++) (specialCase p)
                      $ map (\x -> makeProblem d moves (newMoves up x) current up down x)
                      $ filter (((<=d) .&&. (>0)) . uncurry ((-) `on` weight))
-                     $ [(fromUp, toUp) | fromUp <- powerset up,
-                                         toUp <- powerset $ down `union` filter isWeight up,
+                     $ [(fromUp, toUp) | fromUp <- (++) <$> (tail $ subsequences $ filter isPerson up) <*> (subsequences $ filter isWeight up),
+                                         toUp <- subsequences $ down `union` filter isWeight up,
                                          null $ intersect fromUp toUp]
-    | otherwise      = specialCase p
+    | otherwise      = removeBadSolutons $ specialCase p
         where
             newMoves up (_, toUp)
                 | null $ intersect up toUp = 1
                 | otherwise = 2
+
+removeBadSolutions :: [Problem] -> [Problem]
+removeBadSolutions xs = filter ((>) (numberMoves . maximumBy (comparing weight) xs)) xs
 
 specialCase :: Problem -> [Problem]
 specialCase (Problem d moves current up down) =
     map (makeProblem d moves 2 current up down . flip (,) [] . flip (\\) down)
     $ filter (isValid d up)
     $ map (++ down)
-    $ powerset
+    $ subsequences
     $ filter isPerson up
 
 isValid :: Int -> [Weight] -> [Weight] -> Bool
 isValid d up down =
     any (((<=d) .&&. (>0)) . (((-) `on` weight) transferred))
-    $ powerset
+    $ subsequences
     $ filter isWeight up
         where
             transferred = intersect up down
