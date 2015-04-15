@@ -5,7 +5,7 @@ import Control.DeepSeq (NFData, rnf)
 import Control.Monad (filterM)
 import Control.Parallel.Strategies (parMap, rdeepseq)
 import Data.Function (on)
-import Data.List ((\\), intercalate, intersect, maximumBy, minimumBy, partition, subsequences, union)
+import Data.List ((\\), groupBy, intercalate, intersect, maximumBy, minimumBy, partition, sortBy, subsequences, union)
 import Data.Ord (comparing)
 import System.Environment (getArgs)
 
@@ -42,6 +42,7 @@ infixr 3 .&&.
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 p .&&. q = \x -> p x && q x
 
+main :: IO ()
 main = putStr . stringify . solve . parse . lines =<< readFile . head =<< getArgs
 
 parse :: [String] -> BaseProblem
@@ -66,32 +67,23 @@ stringify Nothing = "No solution found!"
 stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
                                             ++ display p
                                             ++ "\nMoves needed: "
-                                            ++ show (numberSteps p)]
+                                            ++ show (numberMoves p)]
     where
         stringify' problem@(Problem _ _ Nothing _ _) xs = display problem : xs
         stringify' (Problem d moves (Just p@(Problem _ m _ u b)) up down) xs =
             stringify' p
             $ flip (:) xs
             $ "Transfer down: "
---              ++ useTrick
+              ++ useTrick
               ++ "\n[\n"
               ++ unlines (map prettify $ intersect down u)
               ++ "]\nTransfer up:\n[\n"
               ++ unlines (map prettify $ intersect up b)
               ++ "]\nMoves (needed/total): "
               ++ show (moves - m, moves)
---                  where
---                      useTrick
---                        | moves - m == 2 = "using weights: ["
---                                         ++ (intercalate ", "
---                                            $ map prettify'
---                                            $ head
---                                            -- $ filter (\x -> weight (intersect down u) - weight x <= d && weight (intersect down u) - weight x > 0)
---                                            $ powerset
---                                            $ filter isWeight
---                                            $ up ++ down)
---                                         ++ "]"
---                        | otherwise = ""
+                  where
+                      useTrick = show $ moves - m == 2
+
 
 display :: Problem -> String
 display (Problem d moves _ up down) = "Up:\n[\n" ++ unlines (map prettify up) ++ "]\nDown:\n[\n" ++ unlines (map prettify down) ++ "]"
@@ -108,7 +100,7 @@ prettify' = drop 2 . prettify
 solve :: BaseProblem -> Maybe Problem
 solve problem
     | null $ getPossibleSolutions problem = Nothing
-    | otherwise = Just $ minimumBy (comparing numberSteps) $ getPossibleSolutions problem
+    | otherwise = Just $ minimumBy (comparing numberMoves) $ getPossibleSolutions problem
 
 getPossibleSolutions :: BaseProblem -> [Problem]
 getPossibleSolutions (BaseProblem d up down) =
@@ -126,38 +118,30 @@ simulateProblem states = (++) states
                            $ parMap rdeepseq possibleMoves states
 
 possibleMoves :: Problem -> [Problem]
-possibleMoves p@(Problem d moves current up down)
-    | hasPerson down = removeBadSolutions
-                     $ (++) (specialCase p)
-                     $ map (\x -> makeProblem d moves (newMoves up x) current up down x)
-                     $ filter (((<=d) .&&. (>0)) . uncurry ((-) `on` weight))
-                     $ [(fromUp, toUp) | fromUp <- (++) <$> (tail $ subsequences $ filter isPerson up) <*> (subsequences $ filter isWeight up),
-                                         toUp <- subsequences $ down `union` filter isWeight up,
-                                         null $ intersect fromUp toUp]
-    | otherwise      = removeBadSolutons $ specialCase p
+possibleMoves p@(Problem d moves current up down) =
+    removeBadSolutions
+    $ map (\x -> makeProblem d moves (newMoves up x) current up down x)
+    $ filter (((<=d) .&&. (>0)) . uncurry ((-) `on` weight))
+    $ [(fromUp, toUp) | fromUp <- (++) <$> (tail $ subsequences $ filter isPerson up) <*> (subsequences $ filter isWeight up),
+                        toUp <- subsequences $ weights,
+                        null $ intersect fromUp toUp]
         where
+            weights
+                | hasPerson down = down `union` filter isWeight up
+                | otherwise = filter isWeight up
             newMoves up (_, toUp)
                 | null $ intersect up toUp = 1
                 | otherwise = 2
 
 removeBadSolutions :: [Problem] -> [Problem]
-removeBadSolutions xs = filter ((>) (numberMoves . maximumBy (comparing weight) xs)) xs
-
-specialCase :: Problem -> [Problem]
-specialCase (Problem d moves current up down) =
-    map (makeProblem d moves 2 current up down . flip (,) [] . flip (\\) down)
-    $ filter (isValid d up)
-    $ map (++ down)
-    $ subsequences
-    $ filter isPerson up
-
-isValid :: Int -> [Weight] -> [Weight] -> Bool
-isValid d up down =
-    any (((<=d) .&&. (>0)) . (((-) `on` weight) transferred))
-    $ subsequences
-    $ filter isWeight up
-        where
-            transferred = intersect up down
+removeBadSolutions [] = []
+removeBadSolutions xs = furthestSolutions
+    where
+        furthestSolutions = map (maximumBy (comparing (weight . getLowerPeople))) $ groupBy ((==) `on` numberMoves) xs
+        --furthestSolution = maximumBy (comparing transferred) xs
+        transferred (Problem d moves (Just (Problem _ _ _ prevUp prevDown)) up down) =
+            ((+) `on` weight) (intersect up prevDown) (filter isPerson $ intersect down prevUp)
+        --shortestSolution = minimumBy (comparing numberMoves) $ sortBy (flip (comparing (weight . getLowerPeople))) xs
 
 makeProblem :: Int -> Int -> Int -> Maybe Problem -> [Weight] -> [Weight] -> ([Weight], [Weight]) -> Problem
 makeProblem d moves toAdd current up down (fromUp, toUp) =
@@ -168,14 +152,17 @@ makeProblem d moves toAdd current up down (fromUp, toUp) =
 powerset :: [Weight] -> [[Weight]]
 powerset = filterM (const [True, False])
 
-numberSteps :: Problem -> Int
-numberSteps (Problem _ steps _ _ _) = steps
+numberMoves :: Problem -> Int
+numberMoves (Problem _ steps _ _ _) = steps
 
 getDown :: Problem -> [Weight]
 getDown (Problem _ _ _ _ down) = down
 
 weight :: [Weight] -> Int
 weight = foldr (\x acc -> getWeight x + acc) 0
+
+getLowerPeople :: Problem -> [Weight]
+getLowerPeople (Problem _ _ _ _ down) = filter isPerson down
 
 getWeight :: Weight -> Int
 getWeight (P p _) = p
