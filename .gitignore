@@ -17,6 +17,8 @@ chrY*.fa
 chr1*.fa
 
 # Documentation stuff
+documentation/*.pas
+documentation/*.cs
 
 *.pdf
 *.aux
