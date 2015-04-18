@@ -42,6 +42,11 @@ infixr 3 .&&.
 (.&&.) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 p .&&. q = \x -> p x && q x
 
+infixr 2 .||.
+
+(.||.) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
+p .||. q = \x -> p x || q x
+
 main :: IO ()
 main = putStr . stringify . solve . parse . lines =<< readFile . head =<< getArgs
 
@@ -74,15 +79,12 @@ stringify (Just p) = unlines $ stringify' p ["\nFinished state:\n"
             stringify' p
             $ flip (:) xs
             $ "Transfer down: "
-              ++ useTrick
               ++ "\n[\n"
               ++ unlines (map prettify $ intersect down u)
               ++ "]\nTransfer up:\n[\n"
               ++ unlines (map prettify $ intersect up b)
               ++ "]\nMoves (needed/total): "
               ++ show (moves - m, moves)
-                  where
-                      useTrick = show $ moves - m == 2
 
 
 display :: Problem -> String
@@ -104,7 +106,7 @@ solve problem
 
 getPossibleSolutions :: BaseProblem -> [Problem]
 getPossibleSolutions (BaseProblem d up down) =
-    filter ((==numberPeople) . length . filter isPerson . getDown)
+    filter (not . any isPerson . getUp)
     . simulateProblem
     $ [Problem d 0 Nothing up down]
         where
@@ -122,9 +124,8 @@ possibleMoves p@(Problem d moves current up down) =
     removeBadSolutions
     $ map (\x -> makeProblem d moves (newMoves up x) current up down x)
     $ filter (((<=d) .&&. (>0)) . uncurry ((-) `on` weight))
-    $ [(fromUp, toUp) | fromUp <- (++) <$> (tail $ subsequences $ filter isPerson up) <*> (subsequences $ filter isWeight up),
-                        toUp <- subsequences $ weights,
-                        null $ intersect fromUp toUp]
+    $ [(fromUp, toUp) | fromUp <- tail $ subsequences up),
+                        toUp <- subsequences down,
         where
             weights
                 | hasPerson down = down `union` filter isWeight up
@@ -155,8 +156,8 @@ powerset = filterM (const [True, False])
 numberMoves :: Problem -> Int
 numberMoves (Problem _ steps _ _ _) = steps
 
-getDown :: Problem -> [Weight]
-getDown (Problem _ _ _ _ down) = down
+getUp :: Problem -> [Weight]
+getUp (Problem _ _ _ up _) = up
 
 weight :: [Weight] -> Int
 weight = foldr (\x acc -> getWeight x + acc) 0

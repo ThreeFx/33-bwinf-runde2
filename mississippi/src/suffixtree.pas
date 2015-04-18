@@ -225,7 +225,8 @@ IMPLEMENTATION USES SysUtils;
 						// Füge den mittleren Knoten in der Mitte ein
 						ReplaceChildWith(cur, child, mid);
 
-						// Füge die beiden Suffixreste an der neu erstellten Verzweigung an
+						// Füge die beiden Suffixreste an der neu erstellten
+						// Verzweigung an
 						AddChild(mid, newNode);
 						AddChild(mid, child);
 
@@ -296,14 +297,15 @@ IMPLEMENTATION USES SysUtils;
 		END;
 	END;
 
-	FUNCTION Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
+	FUNCTION Add(nodelist : NodeListPtr; l, k : Integer;
+	             list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
 	VAR
 		curNode : ResultListPtr;
 	BEGIN
 		// Das Ergebnis sei die Ursprungsliste
 		result := list;
 
-		// Wenn die einzufügende Teilkette nicht nil ist
+		// Wenn die einzufügende Teilkette existiert
 		IF nodelist <> nil THEN
 		BEGIN
 			curNode := list;
@@ -312,7 +314,7 @@ IMPLEMENTATION USES SysUtils;
 			WHILE curNode <> nil DO
 			BEGIN
 				// Wenn die Anzahl der Wiederholungen der einzufügenden
-				// Zeichenkette und der aktuellen gleich sind.
+				// Zeichenkette und der aktuellen gleich sind
 				IF curNode^.rep = k THEN
 				BEGIN
 					// Wenn die aktuell betrachtete Teilkette Bestandteil der
@@ -320,13 +322,13 @@ IMPLEMENTATION USES SysUtils;
 					IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
 					BEGIN
 						// Ersetze die aktuelle Teilkette mit der einzufügenden,
-						// da die einzufügende maximaler ist
+						// da die einzufügende bei gleicher Häufigkeit länger ist
 						curNode^.nodes := nodelist;
 						curNode^.len := l;
 						exit;
 					END
 					// Ansonsten wenn die einzufügende Teilkette Bestandteil
-					// der aktuell betrachtenden ist
+					// der aktuell betrachteten ist
 					ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
 					BEGIN
 						// Breche den Vorgang ab, da die maximale Teilkette
@@ -405,34 +407,12 @@ IMPLEMENTATION USES SysUtils;
 		END;
 	END;
 
-	PROCEDURE DisposeResultList(list : ResultListPtr); FORWARD;
-
 	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
 	VAR
 		list : ResultListPtr;
 	BEGIN
 		list := FindSubstringsInNode(len, rep, nil, tree.root, 0, tree.s);
-
 		PrintFoundStrings(list, tree.s);
-	END;
-
-	PROCEDURE DisposeNodeList(nlist : NodeListPtr);
-	BEGIN
-		IF nList <> nil THEN
-		BEGIN
-			DisposeNodeList(nList^.next);
-			FreeMem(nList);
-		END;
-	END;
-
-	PROCEDURE DisposeResultList(list : ResultListPtr);
-	BEGIN
-		IF list <> nil THEN
-		BEGIN
-			DisposeNodeList(list^.nodes);
-			DisposeResultList(list^.next);
-			FreeMem(list);
-		END;
 	END;
 
 	PROCEDURE DisposeNode(node : NodePtr);

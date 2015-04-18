@@ -7,6 +7,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{breqn}
 \usepackage{caption}
 \usepackage{graphicx}
 \usepackage{lmodern}
@@ -15,6 +16,8 @@
 \usepackage[usenames, dvipsnames]{color}
 \usepackage{booktabs, tabularx}
 \usepackage{float}
+\usepackage{url}
+\usepackage{braket}
 
 \usepackage{newfloat}
 \DeclareFloatingEnvironment[fileext=lod]{abbildung}
@@ -54,6 +57,160 @@
 
 \part{Aufgabe 1: Seilschaften}
 
+\chapter{Aufgabe}
+
+In der Aufgabe 1 soll eine Lösungsmethode für generelle Versionen eines logischen Ausbruchproblems von Charles Lutwidge Dodgson (Lewis Carroll) gefunden werden. Diese Aufgabe ähnelt der vorigen Aufgabe "Faires Füllen", ist aber im Hinblick auf die Komplexität der Verschiebungen schwieriger. Dabei muss eine Reihe an Fahrten gefunden werden, mit denen in einem Turm eingesperrte Personen diesem entkommen können, indem durch einen Seilzug Personen und Gewichte so transportiert werden,
+dass die Personen schnellstmöglich dem Turm entkommen und gleichzeitig die einzelenen Fahrten unbeschadet überstehen.
+
+\bigskip
+
+\chapter{Lösungsidee}
+
+\section{Modellierung}
+
+Als Lösungsmethode für das Problem wurde die Breitensuche (BFS) aller möglichen Zustände gewählt. Durch die Aufgabenstellung ergibt sich daraus ein azyklischer, gerichteter Baum, dessen Knoten jeweils einen Zustand des Problems modellieren. Ein Zustand besteht aus zwei Listen, von denen die eine die sich oben befindenden Objekte beschreibt und die andere die unteren.
+
+\section{Ermittlung aller Zustände}
+
+Der Baum wird ausgehend von dem Ausgangszustand schrittweise aufgebaut und durchlaufen, indem zu jedem Zustand in der aktuellen horizontalen Ebene alle nachfolgenden Zustände generiert werden, die im nächsten Schritt betrachtet werden. In diesem Fall soll der Baum nur implizit durch die unten modellierten Funktionen dargestellt werden.\\
+Um alle Zustände zu ermitteln, werden alle Gewichtverschiebungskombinationen der oben und unten sich befindenden Objekte ausprobiert und nur valide Fahrten, also nur Fahrten, die die Personen unbeschadet überstehen, ausgewählt. Alle möglichen Verschiebungen in einem Zustand verknüpfen hierbei alle möglichen Auswahlen der Gewichte der oberen Liste mit denen der unteren.
+Alle möglichen Auswahlen aus allen Objekte einer Liste können dabei mathematisch als Potenzmenge ($\wp$) ausgedrückt werden:\\
+\begin{equation}
+	\wp(\set{1,2,3}) = \set{\emptyset,\set{1},\set{2},\set{3},\set{1,2},\set{1,3},\set{2,3},\set{1,2,3}}
+\end{equation}
+
+Die Bestimmung, ob eine Fahrt ungefährlich ist, geschieht durch eine simple Prüfung: Dabei wird die Summe aller Gewichte, die nach oben transportiert werden sollen von der Summe aller Gewichte, welche sich in die andere Richtung bewegen, abgezogen und geprüft, ob das Ergebnis postiv und nicht größer als die vordefinierte Grenze ist. Falls nur Gewichte in einer Fahrt transportiert werden, muss sich die Differenz der Gewichtssummen nicht innerhalb dieser Grenze befinden, da bei der Fahrt
+keine Personen zu Schaden kommen können.\\
+Im folgenden soll diese Beschreibung in der mathematischen Mengenschreibweise ausgedrückt werden. Dabei wird die Menge aller möglichen Züge als $\Gamma$ definiert:
+\begin{dmath}
+	\Gamma(d, \set{U, D}) = \\ \set{\set{u, d} | u \in \wp(U), d \in \wp(d): 0 < \omega(u) - \omega(d) \wedge \Psi(\set{U, D}, d) \wedge (\omega(u) - \omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))}
+\end{dmath}
+
+Wobei U\footnote{Vom englischen ``U''p} und D\footnote{Vom englischen ``D''own} die aktuellen Gewichte auf der oberen und der unteren Seite beschreiben. $\omega(S)$ sei definiert als die Summe aller Gewichte der vorliegenden Menge $S$. $\sigma(S)$ sei dabei die Prüfung, ob in der Menge keine Personen sind:
+\begin{equation}
+	\sigma(S) = \forall s \in S: \neg IstPerson(s)
+\end{equation}
+
+$\Psi$ eliminiert hierbei den letzten Randfall. Dieser zeichnet sich dadurch aus, dass er den Transport mehrerer Personen, die alleine zu schwer gewesen wären um die Fahrt zu überleben, ermöglicht. Dabei werden erst die benötigten Gewichte von oben nach unten geworfen, mit denen die Personen in der nächsten Fahrt herabfahren. Um feststellen zu können, ob eine Menge an Gewichten in einer vorherigen Fahrt von oben herabgeworfen wurde, muss geprüft werden, ob der obere Zustand eine Obermenge der nach oben
+zu transportierenden Gewichte ist. Um die obere Liste des vorigen Zustandes herauszufinden, wird die Funktion $\epsilon$ verwendet. Anzumerken ist, dass der Randfall nur beachtet werden muss, wenn sich keine Personen unten befinden, da sie sonst die Gewichte, die sich unten befinden, ein- und ausladen könnte.
+\begin{equation}
+	\Psi(\set{U, D}, d) = \exists p \in D : IstPerson(p) \vee \epsilon(U) \supset d
+\end{equation}
+
+Ein Beispiel hierfür findet sich in dem ersten Beispiel der Aufgabe, in dem zuerst das 75kg schwere Gewicht heruntergelassen werden muss, bevor die 90kg schwere Person dann sicher am Boden ankommen kann.\\
+Das folgende Beispiel demonstriert die gesamte Formel der Fahrtenfindung. Die Unterscheidung von Personen und Gewichten geschieht dabei durch die Voranstellung eines ``P'' oder ``W'' vor dem Gewicht, welches das Gewicht als ``P''erson oder Ge``W''icht\footnote{Eigentlich vom englischen ``W''eight} kennzeichnet.
+\begin{equation*}
+	\Gamma(3, \set{\set{W 2, P 6}, \set{P 1, P 2}}) = \set{\set{\set{W 2}, \emptyset}, \set{\set{W 2}, \set{P 1}}, \set{\set{P 6}, \set{P 1, P 2}}}
+\end{equation*}
+
+Die Ermittlung des aus einer Gewichtebverteilung entstehenden Zustandes geschieht durch die Mengenoperationen der Differenz ($\setminus$) und der Vereinigung ($\cup$). Als Differenz von zwei Mengen $S$ und $T$ wird die Menge $R$ bezeichnet, die alle Elemente enthält, die zwar in $S$, aber nicht in $T$ enthalten sind. Als Vereinigung zweier Mengen $S$ und $T$ bezeichnet man die Menge aller Elemente, die entweder in $S$ oder in $T$ oder in beiden Mengen vorkommen.
+\begin{equation*}
+	\begin{gathered}
+		S \setminus T = \set{r | r \in S \wedge r \not\in T}\\
+		S \cup T = \set{r | r \in B \vee r \in T}
+	\end{gathered}
+\end{equation*}
+Aus einer Menge werden dabei diejenigen Gewichte entfernt, die von jener Menge in die andere transportiert werden und diejenigen Gewichte hinzugefügt, die jetzt zu der Menge gehören. Die Verschiebung der Gewichte geschieht hierbei durch $\gamma$:
+\begin{equation}
+	\gamma(\set{U, D}, \set{u, d}) = \set{(U \setminus u) \cup d), (D \setminus d) \cup u}
+\end{equation}
+
+Für das obige Bespiel ergibt sich dabei:
+\begin{equation*}
+	\begin{gathered}
+		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \emptyset}) = \set{\set{P 6}, \set{P 1, P 2, W 2}}\\
+		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \set{P 1}}) = \set{\set{P 6, P 1}, \set{P 2, W 2}}\\
+		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{P 6}, \set{P 1, P 2}}) = \set{\set{W 2, P 1, P 2}, \set{P 6}}
+	\end{gathered}
+\end{equation*}
+
+Durch die Kombination von $\Gamma$ und $\gamma$ lassen sich alle Zustände, die aus einem spezifizierten Zustand direkt erreicht werden können, definieren. Diese Operation wird durch $\Pi$ beschrieben:
+\begin{equation}
+	\Pi(d, s) = \set{\gamma(s, v) | v \in \Gamma(d, s)}
+\end{equation}
+
+\section{Finden einer Lösung}
+
+Nun soll zu einem Zustand eine Kombination von Fahrten gefunden werden, sodass sich im Endzustand sich keine Personen mehr oben befinden. Mathematisch lässt sich dieser so formulieren:
+\begin{equation}
+	\Omega(\set{U, D}) = \nexists u \in U : IstPerson(u)
+\end{equation}
+
+Dafür werden zuerst alle Zustände bestimmt, die sich aus dem Anfangszustand ergeben und geprüft, ob sie dem Kriterium $\Omega$ entsprechen. Falls dies der Fall ist, ist das Problem gelöst und die Suche kann abgebrochen werden. Ansonsten werden aus diesen Zuständen wiederum alle resultierenden Zustände betimmt, bis schließlich ein Zustand gefunden ist, der das Lösungskriterium erfüllt.\\
+Um dies zu erreichen, kann man wiederholt $\Pi$ aufrufen, bis ein Zustand erreicht wird, für den $\Omega$ zutrifft:
+\begin{equation}
+	f(d, S) =
+	\begin{cases}
+		S, & \exists s \in S: \Omega(S)\\
+		f(d, \lambda(\set{\Pi(d, s) | s \in S}), & sonst
+	\end{cases}
+\end{equation}
+
+Dabei bezeichnet $\lambda$ eine Funktion, die eine Menge von Mengen zu einer Menge vereinigt:
+\begin{equation}
+	\lambda(\set{A_{1}, A_{2}, .. A_{n}}) = \emptyset \cup A_{1} \cup A_{2}, \cup .. \cup A_{n}
+\end{equation}
+
+Die Funktion $f$ sucht in einer anfänglichen Menge von Zuständen solange weiter, bis ein Zustand erreicht wird, welcher gelöst ist. Für das obige Beispiel ergibt sich so der folgende erste Schritt:
+\begin{equation*}
+	\begin{gathered}
+	f(3, \set{\set{\set{W 2, P 6}, \set{P 1, P 2}}})\\
+	\equiv f(3, \lambda(\set{\Pi(3, s) | s \in S})\\
+	\equiv f(3, \set{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
+	                 \set{\set{P 1, P 6}, \set{W 2, P 2}},\\
+	                 \set{\set{P 1, P 2, W 2}, \set{P 6}}})
+	\end{gathered}
+\end{equation*}
+Für den nächsten Schritt soll des Platzes halber nur die letzte Menge des ersten Aufrufs von $f$ betrachtet werden:
+\begin{equation*}
+	\begin{gathered}
+		f(3, \set{\set{\set{W 2, P 1, P 2}, \set{P 6}}})\\
+		\equiv f(3, \set{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
+		                 \set{\set{W 2}, \set{P 1, P 2, P 6}},\\
+		                 \set{\set{P 1, P 2}, \set{W 2, P 6}},\\
+		                 \set{\set{P 2}, \set{P 1, W 2, P 6}},\\
+		                 \set{\set{P 1, W 2}, \set{P 2, P 6}}})
+	\end{gathered}
+\end{equation*}
+
+Dabei wird festgestellt, dass der Zustand $\set{\set{W 2}, \set{P 1, P 2, P 6}}$ eine mögliche Lösung des ursprünglichen Problems $\set{\set{W 2, P 6}, \set{P 1, P 2}}$ darstellt und die Suche wird abgebrochen.
+
+\section{Optimierungen}
+
+Der Pfad einer korrekten Lösung ist im schlimmsten Fall $2^{n} - 1$ Fahrten lang, da es insgesamt nur $2^{n}$ verschiedene Verteilungsmöglichkeiten der $n$ Gewichte eines Problems gibt. Dabei werden im schlimmsten Fall vom Anfangszustand, bei dem sich keine Objekte auf dem Boden befinden, alle Gewichte Schritt für Schritt nach unten transportiert.
+
+\subsection{Optimierung 1: Frühzeitiges Abbrechen bei Wiederholung}
+
+Zu beachten ist, dass trotz einer Einschränkung der Suchtiefe die Suche mit der Funktion $f$ nicht nur $2^{n} - 1$ Schritte benötigt, sondern Zustände, die wiederholt vorkommen, erneut berechnet, was nicht mehr notwenig ist, da die vorher gefundene Lösung weniger Schritte zur Erreichung des Zustandes benötigt als der aktuelle Pfad. So kann bei aufkommen eines wiederholten Zustandes die Suche abgebrochen werden. Dazu wird die Funktion $f$ um eine Menge der bereits durchschrittenen Zustände
+erweitert:
+\begin{equation}
+	f(d, S, V) =
+	\begin{cases}
+		S,& \exists s \in S: \Omega(s)\\
+		f(d, \lambda(\set{\Pi(d, s) | s \in S, s \not\in V}), V \cup \lambda(\set{\Pi(d, s) | s \in S})), & sonst
+	\end{cases}
+\end{equation}
+
+Die Lösungsfunktion wird nun durch $g$ dargestellt:
+\begin{equation}
+	g(d, S) = f(d, \set{S}, \emptyset)
+\end{equation}
+
+\subsection{Optimierung 2: Auslassen unmöglicher Fahrten}
+
+Durch die Verwendung der Potenzmenge bei der Verschiebung werden immer auch Fahrten ausprobiert, die unmöglich sind. Diese entstehen zum Beispiel wenn versucht wird eine beliebige Menge an Objekten gegen die leere Menge nach oben zu verschieben. Fälle wie diese lassen im Voraus ausschließen, indem die leere Menge bei den von oben zu transportierenden Objekten ausgeschlossen wird.\\
+Dafür definieren wir $\wp_{n}$ als Potenzmenge, in der jede Menge mindestens $n$ Elemente hat:
+\begin{equation}
+	\wp_{n} = \set{s | s \in \wp(S): |s| \geq n}
+\end{equation}
+
+So lässt sich $\Gamma$ anpassen:
+\begin{dmath}
+	\Gamma(d, \set{U, D}) = \\ \set{\set{u, d} | u \in \wp_{1}(U), d \in \wp_{0}(d): 0 < \omega(u)-\omega(d) \wedge \Psi(\set{U,D},d) \wedge (\omega(u)-\omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))}
+\end{dmath}
+
+\chapter{Implementation}
+
 \lstset{language=[Sharp]C,
   basicstyle=\ttfamily\scriptsize,
   numbers=left,
@@ -74,7 +231,271 @@
            {Ü}{{\"U}}1
 }
 
-\chapter{Aufgabe}
+
+Die dargestellte Lösungsidee wurde in der Sprache C\# geschrieben. Sie zeichnet sich durch die Verwendung von effektiven Datentypen aus. Es wurde hierbei weniger Wert auf eine genaue Übertragung der Funktionen gelegt als auf eine schnelle Implementation.
+
+\subsection{Datentypen}
+
+Zur Darstellung des Problems werden zwei Klassen definiert:\\
+
+\paragraph{\code{Weight} - Ein Objekt} Durch \code{Weight} wird ein Objekt mit bestimmten Eigenschaften wie Art (Person oder Stein), Gewicht (in kg) und Anfangspoition (oben oder unten) dargestellt. Zusätzlich zu diesen durch die Problemstellung beschriebenen Eigenschaften besitzt jedes Gewicht zusätzlich eine eindeutige Kennnummer, mit der es referenzierbar ist.
+
+\paragraph{\code{ProblemState} - Ein Zustand des Problems} Mit Hilfe dieser Klasse wird ein Zustand des aktuellen Problems festgehalten. Es besteht aus der Schranke für Personenfahrten, den beiden Mengen, die die oberen und unteren Gewichte beschreiben, und einer Referenz auf den vorigen Zustand.\\
+
+Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakten Darstellung von Breitensuchen ergänzt. Diese wurden unter der Berücksichtigung der Erweiterbarkeit eingefügt, da durch sie alle Breitensuchen beschrieben werden können.
+
+\paragraph{\code{BFSNode} - Ein abstrakter Knoten eines Breitensuchebaumes} Durch diese abstrakte Klasse wird ermöglicht, eine Breitensuche als abstrakten Prozess darzustellen. Eine \code{BFSNode} muss drei Methoden zur Verfügung stellen: Eine Methode zur Ermittlung aller aus einem Zustand modellierten folgenden Zustände, eine Methode zur Überprüfung, ob ein bestimmer Zustand bereits gelöst ist und eine Methode zum Ausgeben der Lösung.
+
+\paragraph{\code{BFS} - Die Breitensuche an sich} Diese Klasse führt mit Hilfe der Klasse \code{BFSNode} eine einfache Breitensuche aus und gibt das Ergebnis am Ende aus.
+
+\subsection{Umsetzung der beschriebenen Funktionen}
+
+Die in der Lösungsidee angesprochenen Funktionen mit griechischen Buchstaben sind hier in der Form von Klassenmethoden von \code{ProblemState} modelliert.
+
+\paragraph{$\wp(S)$ - \code{Powerset(Weight[] weights)}} Die Potenzmenge wird hierbei durch die Methode \code{Powerset} beschrieben. Sie verhält sich genau wie jene Funktion:
+
+\begin{lstlisting}
+private static Weight[][] Powerset(HashSet<Weight> set)
+{
+	// Begonnen wird mit der Urprungsliste
+    Weight[] seq = set.ToArray();
+	// Die Potenzmenge umfasst nacher alle 2^n Elemente
+    Weight[][] powerset = new Weight[1 << seq.Length][];
+	// Die leere Menge wird als ersten eingefügt
+    powerset[0] = new Weight[0];
+	// Für jedes Gewicht in der Ursprungsliste
+    for (int i = 0; i < seq.Length; i++)
+    {
+		// Bestimme das aktuelle Gewicht
+        Weight cur = seq[i];
+		// Bestimme die Anzahl der bereits eingefügten Teilmengen
+        int count = 1 << i;
+		// Für alle bereits exitierenden Teilmengen
+        for (int j = 0; j < count; j++)
+        {
+			// Bestimme die Liste, an der das aktuelle Element anzufügen ist
+            Weight[] source = powerset[j];
+
+			// Füge eine neue Teilmenge bestehend aus der aktuellen Liste
+			// mit dem aktuellen Element in die Potenzmenge ein
+            Weight[] destination = powerset[count + j] = new Weight[source.Length + 1];
+            for (int q = 0; q < source.Length; q++)
+                destination[q] = source[q];
+            destination[source.Length] = cur;
+        }
+    }
+    return powerset;
+}
+\end{lstlisting}
+
+\paragraph{$\Pi$, $\Gamma$ - \code{ProblemState.AllPossibleMoves()}}  Durch diese Methode werden alle möglichen neuen Zustände aus einem bestimmten Zustand bestimmt. Sie geht folgendermaßen vor:
+
+\begin{lstlisting}
+private IEnumerable<ProblemState> AllPossibleMoves()
+{
+	// Die Liste aller resultierenden Zustände
+    List<ProblemState> result = new List<ProblemState>();
+
+	// Erster Schritt: Bestimme die Potenzmenge der
+	// oberen und unteren Gewichte
+    Weight[][] possibleUpper = Powerset(this.Upper);
+    Weight[][] possibleLower = Powerset(this.Lower);
+
+	// Für alle nicht-leeren Mengen der Potenzmenge oberen Menge
+    for (int i = 1; i < possibleUpper.Length; i++)
+    {
+		// Für alle Mengen der Potenzmenge der unteren Gewichte
+        for (int j = 0; j < possibleLower.Length; j++)
+        {
+			// Bestimme die Gewichtsdifferenz der Mengen
+            int diff = possibleUpper[i].Sum(x => x.ActualWeight)
+                     - possibleLower[j].Sum(x => x.ActualWeight);
+			// Wenn die Differnz größer als 0 ist und der Randfall Psi
+			// beachtet wird
+            if (diff > 0 && IsValid(possibleLower[j])
+			// Und entweder die Differenz nicht größer als dir Schranke d ist
+			// oder alle transportierten Objekte Gewichte sind.
+                && (diff <= d || (possibleUpper[i].All(x => !x.IsPerson)
+                                  && possibleLower[j].All(x => !x.IsPerson))))
+            {
+				// Füge die resultierende Fahrt aus der Gewichteverschiebung
+				// dem Ergebnis hinzu
+                result.Add(this.Move(possibleUpper[i], possibleLower[j]));
+            }
+        }
+    }
+    return result;
+}
+
+// Die Prüfung des Randfalls Psi:
+// Eine Verschibung von unteren Gewichten ist genau dann valid, wenn
+// (0. Keine Gewichte von unten benötigt werden)
+// 1. Sich eine Person unten befindet, die die Gewichte ein- und ausladen kann
+// 2. Oder die Gewichte, die nach oben bewegt werden sollen gerade erst herunter
+//   gelassen worden sind.
+private bool IsValid(Weight[] weights)
+{
+		// Keine Gewichte bewegt werden
+    return weights.Length == 0
+		// Oder sich unten eine Person befindet
+        || this.Lower.Any(x => x.IsPerson)
+		// Oder die Gewichte gerade erst herunter gelassen worden sind
+        || (this.parent != null ? this.parent.Upper.IsSupersetOf(weights) : false);
+}
+\end{lstlisting}
+
+\paragraph{$\gamma$ - \code{ProblemState.Move(Weight[] fromUpper, Weight[] fromLower)}} Die oben mit $\gamma$ beschriebene eigentliche Fahrt wird durch die Methode \code{Move} umgesetzt, die durch Mengenoperationen die Gewichte verschiebt:
+
+\begin{lstlisting}
+private ProblemState Move(Weight[] fromUpper, Weight[] fromLower)
+{
+	// Erstelle einen neuen Zustand aus dem aktuellen.
+    ProblemState result = new ProblemState(this);
+
+	// Entferne die nach unten bewegten Gewichte von oben
+    result.Upper.ExceptWith(fromUpper);
+	// und entferne die nach oben bewegen Gewichte von unten
+    result.Lower.ExceptWith(fromLower);
+
+	// Füge den oberen Gewichten die von unten bewegten hinzu
+    result.Upper.UnionWith(fromLower);
+	// und den unteren die von oben kommenden
+    result.Lower.UnionWith(fromUpper);
+
+    return result;
+}
+\end{lstlisting}
+
+\paragraph{$f$ (bzw. $g$) - \code{BFS.Solve}} Die Funktion $f$, die die Lösung eines Zustandes ermittelt, ist hier in der Klasse \code{BFS} als \code{Solve} definiert.
+
+\begin{lstlisting}
+public void Solve()
+{
+    // Die aktuell zu betrachtenden Zustände
+    Queue<BFSNode> queue = new Queue<BFSNode>();
+    // Die bereits bestimmten und durchlaufenen Zustände
+    List<BFSNode> visitedStates = new List<BFSNode>();
+    // Zuerst soll der Anfangszustand betrachtet werden
+    queue.Enqueue(start);
+    // Dieser gilt auch schon als durchlaufen
+    visitedStates.Add(start);
+
+    // Die Lösung, falls die denn existiert
+    BFSNode result = null;
+
+    // Die Anzahl der Züge, die man bis zur Ermittlung der Lösung braucht
+    int moves = 0;
+
+    // Eine Stoppuhr zum Ermitteln der benötigten Zeit
+    Stopwatch sw = new Stopwatch();
+    sw.Start();
+
+    // Solange es noch Zustände gibt und noch keine Lösung gefunden wurde
+    while (queue.Count != 0 && result == null)
+    {
+        // Erhöhe den Fahrtenzähler um eine Fahrt
+        moves++;
+
+        // Erstelle eine Liste für alle neuen Zustände
+        List<BFSNode> temp = new List<BFSNode>();
+
+        // Für alle aktuell zu betrachtenden Zustände
+        while (queue.Count != 0 && result == null)
+        {
+            // Ermittle den aktuell zu betrachtenden
+            BFSNode current = queue.Dequeue();
+
+            // Für alle Zustände, die aus diesem folgen können
+            foreach (BFSNode p in current.AllPossibleMoves())
+            {
+                // Wenn er noch nicht vorher betrachtet wurde
+                if (!visitedStates.Contains(p))
+                {
+                    // Füge ihn den betrachteten und den neuen Zuständen hinzu
+                    temp.Add(p);
+                    visitedStates.Add(p);
+
+                    // Wenn er eine Lösung darstellt
+                    if (p.IsFinished())
+                    {
+                        // Setze die Lösung auf diesen Zustand
+                        result = p;
+                        break;
+                    }
+                }
+            }
+        }
+        foreach (BFSNode newState in temp)
+        {
+            queue.Enqueue(newState);
+        }
+    }
+
+    // Stoppe die Stoppuhr
+    sw.Stop();
+
+    // Falls eine Lösung gefudnen wurde
+    if (result != null)
+    {
+        // Gebe sie aus
+        result.PrintSolution(moves);
+        Console.WriteLine("Total moves: {0}", moves);
+    }
+    // Ansonsten
+    else
+    {
+        // Gibt es keine Lösung
+        Console.WriteLine("No possible solution!");
+    }
+    Console.WriteLine("Program took {0}ms", sw.ElapsedMilliseconds);
+}
+\end{lstlisting}
+
+\chapter{Verwendung und Beispiele}
+
+\section{Kompilieren und Ausführen des Programmes.
+
+\chapter{Vollständiger Quelltext}
+
+\lstinputlisting[caption=\texttt{seilschaften.cs}]{C:/Users/Ben/Documents/GitHub/bwinf2/seilschaften/src/seilschaften.cs}
+
+%\section{Die elegante Implementation}
+%
+%\lstset{language=Haskell,
+%  basicstyle=\ttfamily\scriptsize,
+%  numbers=left,
+%  showspaces=false,
+%  showtabs=false,
+%  breaklines=true,
+%  showstringspaces=false,
+%  breakatwhitespace=true,
+%  tabsize=2,
+%  escapeinside={(*@}{@*)},
+%  commentstyle=\color{greencomments},
+%  keywordstyle=\color{bluekeywords},
+%  stringstyle=\color{redstrings},
+%  literate={ö}{{\"o}}1
+%           {ä}{{\"a}}1
+%           {ü}{{\"u}}1
+%           {ß}{{\ss}}1
+%           {Ü}{{\"U}}1
+%}
+%
+%
+%In der Sprache Haskell lässt sich eine elegante Version der beschriebenen Lösung implementieren. Durch Haskells funktionaler Programmierparadigma lassen sich die beschriebenen Funktion fast 1:1 umsetzen. Dabei wurden anstatt Mengen Listen verwendet, auf die jedoch mit denselben Operationen verfahren werden kann.\\
+%
+%\subsection{Die Datentypen}
+%
+%Die Datentypdefinitionen in Haskell erfolgen auf einfache Wwise durch das \code{data} Schlüsselwort:
+%
+%\begin{lstlisting}
+%data Weight = P Int | W Int
+%data BaseProblem = BaseProblem Int [Weight] [Weight]
+%\end{lstlisting}
+%
+%Hier wurde ein Datentyp Gewicht, welches entweder eine Person oder ein Stein sein kann, und ein Datentyp Problem\footnote{\code{BaseProblem} bedeutet hier nur, dass dies ein Problem im Ursprungszustand ist} bestehend aus einer Sicherheitsschranke und zwei Listen von Gewichten definiert.\\
+%
+
 
 \part{Aufgabe 3: Mississippi}
 
@@ -102,7 +523,7 @@
 \chapter{Aufgabe}
 
 In Aufgabe 3 soll eine Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge
-untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Dabei soll Rücksicht auf die Skalierbarkeit des Programms genommen werden, sodass Abfragen für relativ große Datenmengen einigermaßen effizient abgewickelt werden. <Was noch??>
+untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Dabei soll Rücksicht auf die Skalierbarkeit des Programms genommen werden, sodass Abfragen für große Datenmengen (~25 MB) trotzdem effizient (d.h. in wenigen Minuten) abgewickelt werden.
 
 \bigskip
 
@@ -110,19 +531,20 @@ untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Da
 
 \section{Modellierung}
 
-Als Lösungsstrategie wurde ein sogenannter Suffixbaum\footnote{Die ursprüngliche Idee basierte auf einem sogennannten Präfixbaum (auch Trie). Da der Suffixbaum dem Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Teilzeichenketten vs. einzelne Zeichen) überlegen ist, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.} gewählt. Ein Suffixbaum ist ein gerichteter, azyklischer Baum in dem alle Suffixe (Endungen) einer Zeichenkette (String) gespeichert werden.\\
+Als Lösungsstrategie wurde ein sogenannter Suffixbaum\footnote{Die ursprüngliche Idee basierte auf einem sogennannten Präfixbaum (auch Trie). Da der Suffixbaum dem Präfixbaum jedoch in Hinblick auf die Speichereffizienz aufgrund der Art der Speicherung (Teilzeichenketten vs. einzelne Zeichen) überlegen ist, wurde der Präfixbaum als Lösungsmethode für ungeeignet empfunden.} gewählt. Ein Suffixbaum ist ein gerichteter, azyklischer Baum in dem alle Suffixe\footnote{Suffixe von $abaaba$:
+$abaaba$, $baaba$, $aaba$, $aba$, $ba$, $a$} (Endungen) einer Zeichenkette (String) gespeichert werden.\\
 Eine Abfrage nach den Eigenschaften einer existierenden Teilzeichenkette (Substring) geschieht hierbei durch einen Baumdurchlauf. Bei diesem geht man Teilzeichenkette für Teilzeichenkette den Baum enstprechend der zu betrachtenden Teilzeichenkette entlang. Die Eigenschaften der betrachteten Teilzeichenkette lassen sich an der resultierenden Position im Baum ablesen.\\
 
 \section{Aufbau eines Suffixbaumes}
 
 Der Suffixbaum besteht aus einem Wurzelknoten (root node), von dem Kanten, welche durch die entsprechenden Teilzeichenketten markiert sind, zu weiteren Knoten ausgehen, von welchen wiederum Kanten ausgehen bis zu einem Blatt, auch Leaf genannt, welches das Ende eines Suffixes markiert. Hierbei werden gemeinsame Präfixe (Anfänge) unterschiedlicher Suffixe in einer Kante gespeichtert. Alle vollständigen Baumdurchläufe, also Baumdurchläufe, die an der Wurzel beginnen und an einem Blatt enden,
-stellen einen Suffix des Ursprungsstrings dar. Da alle Substrings eines Strings Präfixe von Suffixen dieses Strings sind, sind in einem Suffixbaum alle Substrings eines Urspringsstrings enthalten.\\
+stellen einen Suffix des Ursprungsstrings dar. Alle Baumdurchläufe, die nicht an einem Blatt enden, stellen so einen Präfix eines Suffixes der Zeichenkette dar. Da alle Teilzeichenketten einer Zeichenkette Präfixe von Suffixen dieser Kette sind, sind in einem Suffixbaum alle Teilzeichenketten einer Ursprungszeichenkette genau dann enthalten, wenn auch alle Suffixe in ihm enthalten sind.\\
 
-Um einen Suffixbaum aus einer Zeichenkette $T$ aufzubauen, muss zu Beginn and das ende von $T$ ein spezielles Terminationszeichen, welches nicht $T$ vorkommt, eingefügt werden. Dadurch wird verhindert, dass ein Suffix von $T$ gleichzeitig ein Präfix eines anderen Suffixes von $T$ ist, sodass der resultierende Baum alle Suffixe von $T$ enthält.\\
-Ein Suffixbaum wird \textit{schrittweise} aufgebaut, indem nacheinander alle Suffixe von $T$, beginnend mit $T$ selbst, eingefügt werden. Dabei wird der Baum bei jedem Durchlauf angepasst, indem zum Beispiel eine neue Kante hinzugefügt oder eine existierende verändert wird.\\
+Um einen Suffixbaum aus einer Zeichenkette $T$ aufzubauen, muss zu Beginn an das Ende von $T$ ein spezielles Terminationszeichen, welches nicht $T$ vorkommt, eingefügt werden. Dadurch wird verhindert, dass ein Suffix von $T$ gleichzeitig ein Präfix eines anderen Suffixes von $T$ ist und so manche Suffixe nicht in den Baum eingefügt werden, sodass der resultierende Baum unvollständig ist.\\
+Ein Suffixbaum wird \textit{schrittweise} aufgebaut, indem nacheinander alle Suffixe von $T$, beginnend mit $T$ selbst, eingefügt werden. Dabei wird der Baum bei jedem Durchlauf angepasst, indem entweder eine neue Kante hinzugefügt oder eine existierende verändert wird, um den aktuellen Suffix im Baum aufzunehmen.\\
 Als Beispiel soll der Aufbau des Suffixbaumes für die Zeichenkette $abaaba$ betracht werden:\\
 Zu Beginn des Prozesses wird ein Terminationszeichen $\$$ an $abaaba$ angehängt, sodass $T = abaaba\$$.\\
-Schließlich wird ein einfacher Baum bestehend aus nur einer Kante erzeugt:
+Als erstes wird aus der Zeichenkette $T$ ein einfacher Baum bestehend aud zwei Knoten und einer Kante erstellt, der das erste Suffix von $T$, also $abaaba\$$ speichert.
 
 \begin{abbildung}[H]
 	\centering
@@ -134,7 +556,7 @@ Schließlich wird ein einfacher Baum bestehend aus nur einer Kante erzeugt:
 	\caption{Einfügen von $abaaba\$$}
 \end{abbildung}
 
-Nun wird das nächste Suffix in den Baum integriert. Dazu muss lediglich eine neue Kante mit einem neuen Knoten erschaffen werden:
+Nun wird das nächste Suffix ($baaba\$$) in den Baum integriert. Dazu muss lediglich eine neue Kante mit einem neuen Knoten erschaffen werden:
 
 \begin{abbildung}[H]
 	\centering
@@ -148,7 +570,7 @@ Nun wird das nächste Suffix in den Baum integriert. Dazu muss lediglich eine ne
 	\caption{Einfügen von $baaba\$$}
 \end{abbildung}
 
-Um das nächste Suffix $aaba\$$ einzufügen, wird die Kante $abaaba\$$ angepasst. Dabei wird sie nach der längsten gemeinsamen Teilkette der beiden Zeichenketten gespalten und an ihr die beiden übrigen Suffixe eingefügt. Wichtig dabei ist zu beachten, dass das ursprüngliche Suffix nicht verloren geht:
+Um das nächste Suffix $aaba\$$ einzufügen, wird die Kante $abaaba\$$ angepasst. Dabei wird sie nach der längsten gemeinsamen Teilkette der beiden Zeichenketten ($a$) gespalten und an dem entstehenden Knoten die beiden übrigen Suffixe eingefügt. Wichtig dabei ist zu beachten, dass das ursprüngliche Suffix nicht verloren geht:
 
 \begin{abbildung}[H]
 	\centering
@@ -217,7 +639,7 @@ Dasselbe Verfahren findet auch bei dem Einfügen des nächsten Suffixes statt:
 	\caption{Aktualisierung der Kante $baaba\$$ zur Integration von $ba\$$}
 \end{abbildung}
 
-Der Suffixrest von $a\$$ wird nach Ablaufen des bereits existierenden Knotens $a$ eingefügt:
+Der Suffixrest von $a\$$ wird nach dem Ablauf der bereits existierenden Kante $a$ eingefügt:
 
 \begin{abbildung}[H]
 	\centering
@@ -288,11 +710,11 @@ Der erzeugte Baum enthält alle Suffixe der ursprünglichen Zeichenkette $abaaba
 Die Eigenschaften einer Teilzeichenkette lassen sich durch einen Durchlauf des Suffixbaumes anhand dieser ermitteln.\\
 Dabei spielt die Position an der der String erschöpft wurde die entscheidende Rolle.\\
 Die \textbf{Länge} der Teilzeichenkette ergibt sich aus der Summe der Längen der durchlaufenden Kanten und ggf. der aktuellen Tiefe in der Kante, wenn das Ablaufen des Baumes nicht an einem Knoten endete.\\
-Die \textbf{Häufigkeit} der Teilzeichenkette ergibt sich aus der Anzahl der Blätter unter dem aktuellen Knoten. Falls die Suche nach der Teilzeichenkette inmitten einer Kante beendet wurde, so gilt diese Regel für den Knoten \textit{unter} der entsprechenden Kante. Diese Methode funktioniert, da durch das systematische Einfügen der Suffixe garantiert ist, dass die Reste aller Suffixe, welche diese Teilkette als Präfix enthalten, an diesem Knoten angefügt sind.  \\
+Die \textbf{Häufigkeit} der Teilzeichenkette ergibt sich aus der Anzahl der Blätter unter dem aktuellen Knoten. Falls die Suche nach der Teilzeichenkette inmitten einer Kante beendet wurde, so gilt diese Regel für den Knoten \textit{unter} der entsprechenden Kante. Diese Methode funktioniert, da durch das systematische Einfügen der Suffixe garantiert ist, dass die Reste aller Suffixe, welche diese Teilkette als Präfix enthalten, an diesem Knovorgestellteten angefügt sind.  \\
 
-Als Beipielbaum werde der Suffixbaum aus 2.2 verwendet. Zunächst sollen die Eigenschaften der Zeichenfolge $aba$ ermittelt werden. Dafür wird der Baum bis zum Erschöpfen der Zeichenkette durchlaufen.\\
+Als Beipielbaum wird der eben konstruierte Suffixbaum verwendet. Zunächst sollen die Eigenschaften der Zeichenfolge $aba$ ermittelt werden. Dafür wird der Baum bis zum Erschöpfen der Zeichenkette durchlaufen.\\
 Die \textbf{Länge} der Teilzeichenkette ist hierbei die Summe der Länge von $a$ und $ab$, also $3$.\\
-Die \textbf{Häufigkeit} mit der $aba$ in dem Urspringsstring $abaaba$ vorkommt ist gleich der Anzahl der Knoten unter der aktuellen Position, also $2$.\\
+Die \textbf{Häufigkeit} mit der $aba$ in der Ursprungszeichenkette $abaaba$ vorkommt ist gleich der Anzahl der Knoten unter der aktuellen Position, also $2$.\\
 Anbei eine grafische Darstellung des Baumes nach dem Durchlauf. Der Baumdurchlauf ist hierbei rot gefärbt und endet an dem grün markierten Knoten. Die Blätter unter dem beim Durchlauf erreichten Knoten sind blau gefärbt:
 
 \begin{abbildung}[H]
@@ -328,17 +750,17 @@ Anbei eine grafische Darstellung des Baumes nach dem Durchlauf. Der Baumdurchlau
 
 \section{Lösungsgrundlage}
 
-Die Ermittlung der zu suchenden Teilzeichenketten geschieht in Form von Baumdurchläufen des zuvor aufgebauten Suffixbaumes. Dabei werden für die Menge alle Teilzeichenketten der Zeichenfolge $T$ die Länge und die Häufgkeit dieser ermittelt und geprüft, ob sie den zuvor festgelegten Kriterien entsprechen oder nicht. Für eine Zeichenkette der Länge $n$ werden erst alle $\frac{n*(n+1)}{2}$ Teilzeichenketten überprüft und danach noch die nichtmaximalen Teizeichenketten entfernt. Dass diese Methode
+Die Ermittlung der zu suchenden Teilzeichenketten geschieht in Form von Baumdurchläufen des zuvor aufgebauten Suffixbaumes. Dabei werden für die Menge alle Teilzeichenketten der Zeichenfolge $T$ die Länge und die Häufgkeit dieser ermittelt und geprüft, ob sie den zuvor festgelegten Kriterien entsprechen oder nicht. Für eine Zeichenkette der Länge $n$ werden erst alle $\frac{n*(n+1)}{2}$ Teilzeichenketten überprüft und danach noch die nichtmaximalen Teilzeichenketten entfernt. Dass diese Methode
 nicht effizient ist, ist sofort ersichtlich. Dieses Problem soll durch eine simple, jedoch effektive Optimierung gelöst werden.
 
 \subsection{Optimierung 1: Substringssuche nach Baumaufbau}
 
 Der Suffixbaum, der zuvor für jede Teilzeichenkette durchlaufen wurde, soll nun genau einmal komplett durchlaufen werden, wobei trotzdem jede Teilzeichenkette beachtet werden soll. So soll nicht jede Teilzeichenkette generiert und danach erst geprüft werden, sondern andersherum. Grundlage dafür ist ein pre-order Durchlauf des Baumes. Durch den Pfad durch Kanten und Knoten wird dabei implizit eine Teilkette dargestellt, für welche direkt ermittelt werden kann ob sie der Bedingung unterliegt.\\
-Dabei ist aber zu beachten, dass immer noch jede einzelne Teilkette betrachtet werden muss, was die folgende Optimierung verändert.
+Dabei ist aber zu beachten, dass immer noch jede einzelne Teilkette betrachtet werden muss, was wie folgt optimiert werden kann:
 
 \subsection{Optimierung 2: Eliminierung der trivial maximalen Zeichenkette}
 
-Bisher wurden die maximalen Teilzeichenketten einer potentiellen Lösung erst nach der Prüfung aller Teilzeichenketten eines Baumes bestimmt. Durch die genaue Betrachtung der Bediningung für maximale Teilzeichenketten kombiniert mit den Eigenschaften des Suffixbaumes können nun alle \textit{trivial nicht maximalen} Teilzeichenketten eines Baumes während dem Baumdurchlauf schon ausgeschlossen werden. Eine Teilzeichenkette $s$ ist genau dann \textit{trivial nicht maximal}, wenn eine andere Zeichenkette $t$ mit derselben Häufigkeit existiert und $s$ ein Präfix von $t$ ist.\\
+Bisher wurden die maximalen Teilzeichenketten einer potentiellen Lösung erst nach der Prüfung aller Teilzeichenketten eines Baumes bestimmt. Durch die genaue Betrachtung der Bediningung für maximale Teilzeichenketten kombiniert mit den Eigenschaften des Suffixbaumes können nun alle \textit{trivial nicht maximalen} Teilzeichenketten eines Baumes während des Baumdurchlaufes schon ausgeschlossen werden. Eine Teilzeichenkette $s$ ist genau dann \textit{trivial nicht maximal}, wenn eine andere Zeichenkette $t$ mit derselben Häufigkeit existiert und $s$ ein Präfix von $t$ ist.\\
 Da die Bestimmung der Häufigkeit einer bestimmten Teilkette durch die Zählung der Blätter unterhalb dem nächsten Knoten einer Kante geschieht, ist schnell ersichtlich, dass sich die Anzahl der Blätter unabhängig von den Kanten nur durch die Knoten bestimmt wird. Aus diesem Grund sind alle Teilzeichenketten, die an einem Knoten enden bereits maximal, was an dem gewählten Beispiel gezeigt wird:\\
 
 \begin{abbildung}
@@ -381,7 +803,7 @@ zum Anfang der Zeichenkette $T$ und der Länge von $s$.\\
 So wird die Teilzeichenkette $aba$ der Zeichenkette $abaaba$ als $(0, 3)$\footnote{Equivalent ist die Speicherung als $(3, 3)$, dies spielt für die Darstellung keine Rolle} gespeichert.\\
 Der vorher aufgebaute Suffixbaum sieht nach dieser Änderung so aus:
 
-\begin{abbildung}[H]
+\begin{abbildung}
 	\centering
 	\tikzset{level distance=3cm}
 	\Tree
@@ -425,11 +847,11 @@ Zunächst sollen die verwendeten Datentypen betrachtet werden.
 
 \subsection{Datentypen}
 
-Alle Datentypen bestehen aus \texttt{RECORD}s mit entsprechenden Feldern, auf die im Programm durch Zeiger auf die Objelte zugegriffen wird. Durch diese Modellierungsform wird das Risiko inkonsistente Zustände zu erzeugen vergrößert, was jedoch im Hinblick auf den Speicherverbrauch und die Laufzeit des Programms in Kauf genommen wird.
+Alle Datentypen bestehen aus \texttt{RECORD}s mit entsprechenden Feldern, auf die im Programm durch Zeiger auf die Objekte zugegriffen wird. Durch diese Modellierungsform wird das Risiko inkonsistente Zustände zu erzeugen vergrößert, was jedoch im Hinblick auf den Speicherverbrauch und die Laufzeit des Programms in Kauf genommen wird.
 
 \paragraph{Der Suffixbaum - \code{TSuffixTree}}
 
-Ein Suffixbaum ist definiert durch einen Zeiger auf die Wurzel vom Typ \code{TNode}, die Anzahl der Knoten dessen und die zum Aufbau verwendete Zeichenkette.
+Ein Suffixbaum ist definiert durch die Wurzel vom Typ \code{TNode}, die Anzahl seiner Knoten und die zum Aufbau verwendete Zeichenkette.
 
 \paragraph{Ein Knoten - \code{TNode}}
 
@@ -442,13 +864,13 @@ Durch \code{TResultList} wird eine Liste von Teilzeichenketten dargestellt. Sie 
 
 \paragraph{Die Teilzeichenkette als Liste - \code{TNodeList}}
 
-Die ebenfalls einfach verkettete Liste \code{TNodelist} besteht aus einem Knoten, der die Informationen einer Kante hält, und einer Referenz auf den nächsten Knoten. Wichtig dabei ist die Anodnung der Knoten, da die das Aussehen der Teilkette, die durch die gesamte Liste repräsentiert wird, bestimmt.
+Die ebenfalls einfach verkettete Liste \code{TNodelist} besteht aus einem Knoten, der die Informationen einer Kante hält, und einer Referenz auf den nächsten Knoten. Wichtig dabei ist die Anodnung der Knoten, da diese die die gesamte Teilkette, die durch die Liste repräsentiert wird, bestimmt.
 
 \subsection{Baumaufbau}
 
 \paragraph{\code{CreateSuffixTree(String) : TSuffixTree}:}
 
-Diese Funktion erstellt einen neuen Suffixbaum aus einem gegebener Zeichenkette. Sie geht wie in der obigen Modellierung bereits beschrieben vor:\\
+Diese Funktion erstellt einen neuen Suffixbaum aus einer gegebenen Zeichenkette. Sie geht wie in der obigen Modellierung bereits beschrieben vor:\\
 Dabei werden Schritt für Schritt beginnend mit der Ursprungskette immer kürzere Suffixe in den Baum eingefügt.
 
 \begin{lstlisting}
@@ -539,7 +961,7 @@ BEGIN
 					// Füge den mittleren Knoten in der Mitte ein
 					ReplaceChildWith(cur, child, mid);
 
-					// Füge die beiden Suffixreste an der neu erstellten Verzweigung an
+					// Füge die beiden Suffixreste an der neu erstellte Verzweigung an
 					AddChild(mid, newNode);
 					AddChild(mid, child);
 
@@ -572,7 +994,7 @@ END;
 
 \paragraph{\code{GetNodeAt(NodePtr, String, Char) : NodePtr}}
 
-Eine Funktion, die den Knoten, zu dem eine Kante mit spezifizierten dem Anfangsbuchstaben ausgeht, ermittelt. Falls kein Knoten mit diesem Buchstaben existiert, wird \code{nil} zurückgegeben.
+Eine Funktion, die den Knoten, zu dem eine Kante mit dem spezifizierten Anfangsbuchstaben ausgeht, ermittelt. Falls kein Knoten mit diesem Buchstaben existiert, wird \code{nil} zurückgegeben.
 
 \begin{lstlisting}
 FUNCTION GetNodeAt(node : NodePtr; s : String; c : Char) : NodePtr;
@@ -584,7 +1006,7 @@ BEGIN
 	BEGIN
 		// Solange es noch Nachbarn gibt:
 
-		// Wenn der Anfangsbuchstabe der KAnte mit dem gewünschten
+		// Wenn der Anfangsbuchstabe der Kante mit dem gewünschten
 		// Anfangsbuchstaben übereinstimmt
 		IF s[node^.offset + 1] = c THEN
 		BEGIN
@@ -599,25 +1021,36 @@ BEGIN
 END;
 \end{lstlisting}
 
-\paragraph{\code{ReplaceNodeWith(n, alt, neu : NodePtr)}}
+\paragraph{\code{ReplaceChildWith(node, oldChild, newChild : NodePtr)}}
 
-Eine Prozedur, die den in den Kindern des Knotens $n$ alle Instanzen des Knotens $alt$ mit Zeigern mit $neu$ ersetzt. Aufgrund
-der geringen Nutzung und der Übersichtlichkeit wird hier auf die Darstellung der Prozedur verzichtet, da sie nur bei der Spaltung einer Kante zum Einsatz kommt.
+Eine Prozedur, die den in den Kindern des Knotens \texttt{n} den Knoten \texttt{oldChild} mit \texttt{newChild} ersetzt. Aufgrund von geringer Nutzung wird aud die Erläuterung der Funktionsweise verzichtet.
 
 \subsection{Baumdurchlauf}
 
 \paragraph{\code{FindSubstrings(l, k : Integer; tree : TSuffixTree)}}
 
-Eine Prozedur, die alle maximalen Teilzeichenketten von mindestens Länge $l$ und Häufigkeit $k$ in dem angegebenen Baum ermittelt und ausgibt. Sie dient nur als Hilfsfunktion für die Verkettung der Suche und Ausgabe der Teilzeichenketten
+Eine Prozedur, die alle maximalen Teilzeichenketten von mindestens Länge $l$ und Häufigkeit $k$ in dem angegebenen Baum ermittelt und ausgibt. Sie dient nur als Hilfsfunktion für die Verkettung der Suche und Ausgabe der Teilzeichenketten.
+
+\begin{lstlisting}
+PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
+VAR
+	list : ResultListPtr;
+BEGIN
+	// Ermittle alle Teilzeichenketten, die die Bedingungen erfüllen
+	list := FindSubstringsInNode(len, rep, nil, tree.root, 0, tree.s);
+	// Und gebe die gefundenen Teilzeichenketten aus.
+	PrintFoundStrings(list, tree.s);
+END;
+\end{lstlisting}
 
 \paragraph{\code{FindSubstringsInNode(l, k : Integer; ilist : NodeListPtr; node : NodePtr; curLen : Integer; s : String)}}
 
-Diese Funktion ist das Herzstück des Programms. Es ermittelt rekursiv für alle Knoten einer Ebene die gewünschten Informationen und fügt diese gegebenenfalls in der Ergebnisliste ein. Im Folgenden soll sie im Detail betrachtet werden:
+Diese Funktion ist das Herzstück des Programms. Sie ermittelt rekursiv für alle Knoten einer Ebene die gewünschten Informationen und fügt diese gegebenenfalls in der Ergebnisliste ein. Im Folgenden soll sie im Detail betrachtet werden:
 
 \begin{lstlisting}
 // Übergeben werden: Die Mindestlänge, Mindesthäufigkeit, aktueller Pfad
 FUNCTION FindSubstringsInNode(l, k : Integer; path : NodeListPtr;
-// Der aktuelle Knoten, die aktuelle Länge des Pfages und die Zeichenkette,
+// Der aktuelle Knoten, die aktuelle Länge des Pfades und die Zeichenkette,
 // aus der der Baum erzeugt wurde
 	node : NodePtr; len : Integer; s : String) : ResultListPtr;
 BEGIN
@@ -625,7 +1058,7 @@ BEGIN
 	// Zeichenketten den Kriterien entsprechen
 	result := nil;
 
-	// Solange es noch Nachbarn gibt:
+	// Solange der aktuelle Knoten noch existiert
 	WHILE node <> nil DO
 	BEGIN
 		// Wenn sie mindestens l Zeichen lang ist und k-mal vorkommt
@@ -641,18 +1074,18 @@ BEGIN
 					FindSubstringsInNode(l, k, Add(node, path), node^.child, node^.len + len, s),
 					result, s);
 
-		// Führe dasselbe Verfahren für den nächsten Nachbarn durch
+		// Führe dasselbe Verfahren für den nächsten Nachbarn des Knotens durch
 		node := node^.next_sibling;
 	END;
 END;
 \end{lstlisting}
 
-Zentral für das Verständnis dieser Methode ist die Methode des Einfügens eines Elements in die Ergebnisliste, da sie die \textit{nicht trivial maximalen} Zeichenketten aussortiert.
+Zentral für das Verständnis dieser Funktion ist das Einfügen eines Elements in die Ergebnisliste, da es \textit{nicht trivial maximale} Zeichenketten aussortiert.
 
 \paragraph{\code{Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr}}
 
-Diese Funktion fügt eine Teilkette der Liste nur dann hinzu, falls entweder eine neue Häufigkeit hat oder nicht bereits in einer anderen Teilkette zu finden ist. Ansonsten wird geprüft, ob die einzufügende Teilkette maximal ist. Wenn dies zutrifft wird die nicht maximale Zeichenkette durch die neu einzufügende ersetzt. Im anderen Fall wird die urprüngliche Liste beibehalten.\\
-Zur effizinten Bestimmung, ob eine Teilkette in einer anderen Teilkette vorkommt wird die Funktion \code{Pos(c, p : String) : Integer} aus der \texttt{UNIT} \texttt{SysUtils} verwendet. Sie gibt den Index von c in p zurück, falls c in p vorkommt und ansonsten -1.
+Diese Funktion fügt eine Teilkette der Liste nur dann hinzu, falls diese entweder eine bisher nicht vorgekommene Häufigkeit aufweist oder nicht bereits in einer anderen Teilkette zu finden ist. Ansonsten wird geprüft, ob die einzufügende Teilkette im Hinblick auf die bereits eingefügten maximal ist. Wenn dies der Fall ist, wird die vorhandene nicht maximale Teilkette durch die neu einzufügende ersetzt. Im anderen Fall wird die urprüngliche Liste beibehalten.\\
+Zur effizinten Bestimmung, ob eine Teilkette in einer anderen Teilkette vorkommt wird die Funktion \code{Pos(c, p : String) : Integer} aus der \texttt{UNIT} \texttt{SysUtils} verwendet. Sie ermittelt den Index von \texttt{c} in \texttt{p}, falls \texttt{c} in \texttt{p} vorkommt. Ansonsten wird -1 zurückgegeben.
 
 \begin{lstlisting}
 FUNCTION Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
@@ -662,30 +1095,31 @@ BEGIN
 	// Das Ergebnis sei die Ursprungsliste
 	result := list;
 
-	// Wenn die einzufügende Teilkette nicht nil ist
+	// Wenn die einzufügende Teilkette sinnvoll belegt ist
 	IF nodelist <> nil THEN
 	BEGIN
 		curNode := list;
 
-		// Solange die Ergebnisliste nicht leer ist
+		// Solange die Ergebnisliste nicht vollständig durchschritten wurde
 		WHILE curNode <> nil DO
 		BEGIN
 			// Wenn die Anzahl der Wiederholungen der einzufügenden
-			// Zeichenkette und der aktuellen gleich sind.
+			// Zeichenkette und der aktuellen gleich sind
 			IF curNode^.rep = k THEN
 			BEGIN
-				// Wenn die aktuell betrachtete Teilkette Bestandteil der
+				// Und wenn die aktuell betrachtete Teilkette Bestandteil der
 				// einzufügenden ist
 				IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
 				BEGIN
-					// Ersetze die aktuelle Teilkette mit der einzufügenden,
-					// da die einzufügende maximaler ist
+					// Ersetze die aktuelle Teilkette mit der einzufügenden, da
+					// die einzufügende maximal im Hinblick auf die vorherige ist
 					curNode^.nodes := nodelist;
 					curNode^.len := l;
+					// Und breche den Vorgang ab, da die Teikette
+					// bereits eingefügt wurde
 					exit;
 				END
-				// Ansonsten wenn die einzufügende Teilkette Bestandteil
-				// der aktuell betrachtenden ist
+				// Ansonsten wenn der umgekehrte Fall eintritt
 				ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
 				BEGIN
 					// Breche den Vorgang ab, da die maximale Teilkette
@@ -694,7 +1128,7 @@ BEGIN
 				END;
 			END;
 
-			// Wiederholde dasselbe für das nächste Element
+			// Wiederhole dasselbe für das nächste Element
 			curNode := curNode^.next;
 		END;
 
@@ -714,7 +1148,7 @@ Die Funktion \code{AddCollection} fügt alle Elemente der einen Liste der andere
 
 \paragraph{\code{PrintFoundSubstrings(list : ResultListPtr; s : String)}}
 
-Diese Prozedur gibt die gefundenen Teilzeichenketten aus, indem die Teilkette erst aus dem Pfad aufgebaut werden muss bevor sie schließlich ausgegeben wird. Besonders wichtig dabei ist die Funktion \code{GetString}, welche aus einem Knoten einen die repräsentierte Teilzeichenkette extrahiert.
+Diese Prozedur gibt die gefundenen Teilzeichenketten aus, indem die auszugebende Teilkette aus dem Baum aufgebaut und schließlich ausgegeben wird. Besonders wichtig dabei ist die Funktion \code{GetString}, welche aus einem Knoten die repräsentierte Teilzeichenkette extrahiert.
 
 \paragraph{\code{GetString(node : NodePtr; s : String)}}
 
@@ -747,7 +1181,7 @@ END;
 
 \section{Kompilieren und Ausführen des Programms}
 
-Das Programm wurde mit dem Free Pascal Compiler (FPC) kompiliert. Dabei wurden die compiler flags \verb!-O3! (Code Optimierung), \verb!-Mdelphi! (Implizite \code{result}-Variable) und \verb!-Px86_64! (64-bit Modus) verwendet. Der gesamte Befehl lautet:\\
+Das Programm wurde mit dem Free Pascal Compiler (FPC) kompiliert. Dabei wurden die compiler flags \verb!-O3! (diverse Optimierungen), \verb!-Mdelphi! (Implizite \code{result}-Variable) und \verb!-Px86_64! (64-bit Modus) verwendet. Der gesamte Befehl lautet:\\
 \begin{center}\verb!fpc -Px86_64 -Mdelphi -O3 mississippi.pas!\end{center}
 Dabei einsteht die ausführbare Datei \texttt{mississippi}\footnote{Auf Windows: \texttt{mississippi.exe}}, welche dann durch den Aufruf mit den entsprechenden Parametern ausgeführt wird:\\
 \begin{center}\verb!./mississippi <Datei> l k!\end{center}
@@ -835,7 +1269,7 @@ Für das vollständige E.coli Genom:
 \end{tabular}
 \end{center}
 
-Bei den aufändigeren Beispielen wird nun deutlich, dass die Suche auf seht kurze oder sehr lange Zeichenketten schnell und effizient ist, wohingegen die Suche bei Parametern, die viele potentielle Teilzeichenketten zulassen, sogar \textit{langsamer ist als der Baumaufbau}.\\
+Für die aufwändigeren Beispielen wird nun deutlich, dass die Suche nach sehr kurzen und sehr häufigen oder sehr langen Zeichenketten schnell ist, wohingegen die restlichen Abfragen deutlich langsamer sind.\\
 Als letzte Tabelle soll nun die Suche nach Suffixen im Y-Chromosom des Menschen gezeigt werden:\\
 
 \begin{center}
@@ -852,524 +1286,19 @@ Als letzte Tabelle soll nun die Suche nach Suffixen im Y-Chromosom des Menschen 
 
 Für Beispielsuchen im menschlichen X-Chromosom besitzt der Rechner auf dem die Testdurchläufe durchgeführt wurden nicht genug Arbeitsspeicher, weswegen sie nicht gezeigt werden können.
 
-%\section{Fazit}
+\section{Fazit und Ausblick auf Erweiterungen}
 
-%Zusammenfassend lässt sich nun sagen, dass das Progrmam die gestellten Anforderungen erfüllt und sogar übertrifft.
+Abschließend kann gesagt werden, dass die gewählte Methode des Durchsuchen einer Zeichenkette nach bestimmten Teilzeichenketten durch den Aufbau und den Durchlauf von Suffixbäumen eine geeigenete Methode darstellt, um auch sehr große Zeichenketten effizient verarbeiten zu können.\\
+Trotz der relativ schnellen Konstruktion von Suffixbäumen, läuft der Konstruktionsalgorithmus im Hinblick auf die Länge der Zeichenkette in quadratischer Zeit. Als alternativer Konstruktionsalgorithmus kann Ukkonens Algorithmus\footnote{\url{https://www.cs.helsinki.fi/u/ukkonen/SuffixT1withFigs.pdf}} verwendet werden, welcher in linearer Zeit zur Länge der Eingabe läuft. Ein weiterer Vorteil dieses Algorithmus ist seine Eigenschaft, den Baum ``Online'' aufzubauen, das bedeutet Zeichen für
+Zeichen vom Anfang der Eingabekette, sodass noch größere Zeichenketten verarbeitet werden können, da sie nicht als ganzes Eingelesen und im Arbeitsspeicher abgelegt werden müssen. Der Algorithmus wurde jedoch aufgrund seiner Komplexität nicht umgesetzt und bleibt ``nur'' eine Erweiterungsmöglichkeit.\\
+Eine weitere Verwendungsmöglichkeit von Suffixbäumen ist der Vergleich und die Bestimmung von Gemeinsamkeiten mehrerer Teilzeichenketten. Um diese Erweiterung zu Nutzen muss lediglich die Eingabeteilzeichenkette verändert werden, sodass die beide Teilzeichenketten hintereinander eingelesen werden, getrennt durch ein spezielles Zeichen, welches nicht in beiden Zeichenketten vorkommt. Bäume, die aus mehreren Zeichenketten bestehen werden auch \textit{generalized suffix
+trees}\footnote{``Verallgemeinerte Suffixbäume''} genannt.
 
 \chapter{Vollständiger Quelltext}
 
-\begin{lstlisting}
-PROGRAM Mississippi;
-USES SuffixTree, DateUtils, SysUtils;
 
-FUNCTION ReadFromFile(filename : String) : String;
-VAR
-	f : Text;
-BEGIN
-	Assign(f, filename);
-	Reset(f);
-	Read(f, result);
-END;
+\lstinputlisting[caption=\texttt{mississippi.pas}]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/mississippi.pas}
 
-VAR
-	tree : TSuffixTree;
-	s : String;
-	fromtime : TDateTime;
-	len, rep, ms : Integer;
-
-BEGIN
-	IF (ParamCount = 3) AND FileExists(ParamStr(1)) THEN
-	BEGIN
-		s := ReadFromFile(ParamStr(1));
-		len := StrtoInt(ParamStr(2));
-		rep := StrToInt(ParamStr(3));
-
-		IF (len > 0) AND (rep > 0) THEN
-		BEGIN
-			WriteLn('[Main] Creating suffix tree...');
-			FromTime := Now;
-			tree := CreateSuffixTree(s);
-			ms := MillisecondsBetween(Now, FromTime);
-			WriteLn('[Main] Created suffix tree with ', tree.nodes, ' nodes in ', ms, 'ms');
-			WriteLn('[Main] Suffix tree has ',CountLeaves(tree),' leaves');
-			WriteLn('[Main] Arguments are: length (',len,'); repetitions (',rep,')');
-			FromTime := Now;
-			FindSubstrings(len, rep, tree);
-			ms := MillisecondsBetween(Now, FromTime);
-			WriteLn('[Main] Query for substrings repeated at least ',rep,' times ',
-				           'and are at least ',len,' characters long ',
-				           'took ',ms,'ms');
-
-			DisposeTree(tree);
-		END
-		ELSE
-		BEGIN
-			WriteLn('[Main] Please enter positive values for length and repetitions');
-		END;
-	END
-	ELSE
-	BEGIN
-		Writeln('[Main] Wrong number of parameters or file not found, please enter:');
-		WriteLn('[Main] ./prog filename length repetitions');
-	END;
-END.
-\end{lstlisting}
-
-\newpage
-
-\begin{lstlisting}
-UNIT SuffixTree;
-
-INTERFACE
-
-	TYPE
-		NodePtr = ^TNode;
-		NodeListPtr = ^TNodeList;
-		ResultListPtr = ^TResultList;
-
-		TNode = RECORD
-			offset       : Integer;
-			len          : Integer;
-			next_sibling : NodePtr;
-			child        : NodePtr;
-		END;
-
-		TNodeList = RECORD
-			node : NodePtr;
-			next : NodeListPtr;
-		END;
-
-		TResultList = RECORD
-			nodes : NodeListPtr;
-			len : Integer;
-			rep : Integer;
-			next : ResultListPtr;
-		END;
-
-		TSuffixTree = RECORD
-			root : NodePtr;
-			s    : String;
-			nodes : Integer;
-		END;
-
-	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
-	PROCEDURE DisposeTree(tree : TSuffixTree);
-	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
-	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
-
-IMPLEMENTATION USES SysUtils;
-
-	FUNCTION GetString(node : NodePtr; s : String) : String;
-	VAR
-		i : Integer;
-	BEGIN
-		// Zu Anfang ist keine Zeichenkette vorhanden
-		result := '';
-
-		// Wenn der Knoten existiert
-		IF node <> nil THEN
-		BEGIN
-			// Sollen alle Zeichen im Bereich der Kante
-			FOR i := node^.offset + 1 TO node^.offset + node^.len DO
-			BEGIN
-				// Zu einer Zeichenkette zusammengefügt werden
-				result := result + s[i];
-			END;
-		END;
-	END;
-
-	FUNCTION GetStringFrom(list : NodeListPtr; s : String) : String;
-	BEGIN
-		result := '';
-		WHILE list <> nil DO
-		BEGIN
-			result := GetString(list^.node, s) + result;
-			list := list^.next;
-		END;
-	END;
-
-	FUNCTION GetNodeAt(node : NodePtr; s : String; c : Char) : NodePtr;
-	BEGIN
-		// Es wird davon ausgegegangen, dass kein
-		// Knoten mit dem Buchstaben existiert
-		result := nil;
-		WHILE node <> nil DO
-		BEGIN
-			// Solange es noch Nachbarn gibt:
-
-			// Wenn der Anfangsbuchstabe der KAnte mit dem gewünschten
-			// Anfangsbuchstaben übereinstimmt
-			IF s[node^.offset + 1] = c THEN
-			BEGIN
-				// Gebe diesen Knoten zurück
-				result := node;
-				exit;
-			END;
-
-			// Ansonsten: Suche weiter
-			node := node^.next_sibling;
-		END;
-	END;
-
-	PROCEDURE AddChild(parent, child : NodePtr);
-	BEGIN
-		IF (parent <> nil) AND (child <> nil) THEN
-		BEGIN
-			child^.next_sibling := parent^.child;
-			parent^.child := child;
-		END;
-	END;
-
-	PROCEDURE ReplaceChildWith(node, oldChild, newChild : NodePtr);
-	VAR
-		currentChild, temp : NodePtr;
-	BEGIN
-		IF (node <> nil) AND (oldChild <> nil) AND (newChild <> nil) THEN
-		BEGIN
-			currentChild := node^.child;
-			IF currentChild = oldChild THEN
-			BEGIN
-				node^.child := newChild;
-				temp := newChild^.next_sibling;
-				newChild^.next_sibling := oldChild^.next_sibling;
-				oldChild^.next_sibling := temp;
-			END
-			ELSE
-			BEGIN
-				WHILE currentChild <> nil DO
-				BEGIN
-					IF currentChild^.next_sibling = oldChild THEN
-					BEGIN
-						currentChild^.next_sibling := newChild;
-						temp := newChild^.next_sibling;
-						newChild.next_sibling := oldChild.next_sibling;
-						oldChild^.next_sibling := temp;
-						exit;
-					END;
-					currentChild := currentChild^.next_sibling;
-				END;
-			END;
-		END
-		ELSE
-		BEGIN
-			WriteLn('[ReplaceChild]: An error occured; An argument was null');
-		END;
-	END;
-
-	FUNCTION CreateSuffixTree(s : String) : TSuffixTree;
-	VAR
-		i, j, k, len, offset, nodes : Integer;
-		root, cur, child, mid, newNode : NodePtr;
-	BEGIN
-		s := s + '$'; //$ Das ist für mein Vim Syntax Highlighting
-
-		// Erstellen eines Knotens mit der Information des gesamten Strings
-		cur := GetMem(SizeOf(TNode));
-		cur^.offset := 0;
-		cur^.len := Length(s);
-		cur^.next_sibling := nil;
-		cur^.child := nil;
-
-		// Erstellung des Wurzelknotens
-		root := GetMem(SizeOf(TNode));
-		root^.offset := 0;
-		root^.len := 0;
-		root^.child := nil;
-		root^.next_sibling := nil;
-
-		// Anfügen des Strings an die Wurzel
-		AddChild(root, cur);
-		nodes := 2;
-
-		// Für alle verbleibenden Suffixe
-		FOR i := 2 TO Length(s) DO
-		BEGIN
-			// Beginne an der Wurzel
-			cur := root;
-			j := i;
-
-			WHILE j <= Length(s) DO
-			BEGIN
-				// Bestimme, ob bereits eine Kante mit dem Buchstaben
-				// von dem aktuellen Knoten ausgeht
-				child := GetNodeAt(cur^.child, s, s[j]);
-
-				// Wenn dies der Fall ist
-				IF child <> nil THEN
-				BEGIN
-					offset := child^.offset;
-					len := child^.len;
-
-					// Laufe den String Schritt für Schritt solange
-					// wie er identisch mit der Kante ist ab
-					k := j + 1;
-					WHILE (k - j < len) AND (s[k] = s[offset + 1 + k - j]) DO
-					BEGIN
-						Inc(k);
-					END;
-
-					// Wenn die Kante vollständig durchlaufen wurde
-					IF (k - j) = len THEN
-					BEGIN
-						// Führe dasselbe Verfahren am nächsten Knoten durch
-						cur := child;
-						j := k;
-					END
-					ELSE
-					BEGIN
-						// Ansonsten sind wir mitten in der Kante abgefallen und
-						// müssen diese teilen
-
-						// Erstelle eine neue Kante mit dem neuen Rest, der noch
-						// eingefügt werden muss
-						newNode := GetMem(SizeOf(TNode));
-						newNode^.offset := k - 1;
-						newNode^.len := Length(s) - newNode^.offset;
-						newNode^.child := nil;
-						newNode^.next_sibling := nil;
-
-						// Erstelle einen neuen Knoten, an dem die Abzweigung
-						// verläuft
-						mid := GetMem(SizeOf(TNode));
-						mid^.offset := child^.offset;
-						mid^.len := k - j;
-						mid^.child := nil;
-						mid^.next_sibling := nil;
-
-						// Passe die existierende Kante an
-						child^.offset := child^.offset + (k - j);
-						child^.len := child^.len - (k - j);
-
-						// Füge den mittleren Knoten in der Mitte ein
-						ReplaceChildWith(cur, child, mid);
-
-						// Füge die beiden Suffixreste an der neu erstellten Verzweigung an
-						AddChild(mid, newNode);
-						AddChild(mid, child);
-
-						nodes := nodes + 2;
-						break;
-					END;
-				END
-				ELSE
-				BEGIN
-					// Wenn noch keine Kante mit dem aktuellen Buchstaben beginnt,
-					// füge eine neue Kante an dem aktuellen Knoten an
-					child := GetMem(SizeOf(TNode));
-					child^.offset := j - 1;
-					child^.len := Length(s) - child^.offset;
-					child^.child := nil;
-					child^.next_sibling := nil;
-					AddChild(cur, child);
-
-					nodes := nodes + 1;
-					break;
-				END;
-			END;
-		END;
-		// Schließlich fehlt nur noch die Zuweisung der Felder des Suffixbaums
-		result.root := root;
-		result.s := s;
-		result.nodes := nodes;
-	END;
-
-	FUNCTION LeavesAt(node : NodePtr) : Integer;
-	BEGIN
-		result := 1;
-		IF node <> nil THEN
-		BEGIN
-			IF node^.child <> nil THEN
-			BEGIN
-				result := LeavesAt(node^.child);
-			END;
-			IF node^.next_sibling <> nil THEN
-			BEGIN
-				result := result + LeavesAt(node^.next_sibling);
-			END;
-		END;
-	END;
-
-	FUNCTION LeavesBelow(node : NodePtr) : Integer;
-	BEGIN
-		result := 1;
-		IF node <> nil THEN
-		BEGIN
-			result := LeavesAt(node^.child);
-		END;
-	END;
-
-	FUNCTION CountLeaves(tree : TSuffixTree) : Integer;
-	BEGIN
-		result := LeavesAt(tree.root);
-	END;
-
-	FUNCTION Add(node : NodePtr; list : NodeListPtr) : NodeListPtr; OVERLOAD;
-	BEGIN
-		result := list;
-		IF node <> nil THEN
-		BEGIN
-			result := GetMem(SizeOf(TNodeList));
-			result^.node := node;
-			result^.next := list;
-		END;
-	END;
-
-	FUNCTION Add(nodelist : NodeListPtr; l, k : Integer; list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
-	VAR
-		curNode : ResultListPtr;
-	BEGIN
-		// Das Ergebnis sei die Ursprungsliste
-		result := list;
-
-		// Wenn die einzufügende Teilkette nicht nil ist
-		IF nodelist <> nil THEN
-		BEGIN
-			curNode := list;
-
-			// Solange die Ergebnisliste nicht leer ist
-			WHILE curNode <> nil DO
-			BEGIN
-				// Wenn die Anzahl der Wiederholungen der einzufügenden
-				// Zeichenkette und der aktuellen gleich sind.
-				IF curNode^.rep = k THEN
-				BEGIN
-					// Wenn die aktuell betrachtete Teilkette Bestandteil der
-					// einzufügenden ist
-					IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
-					BEGIN
-						// Ersetze die aktuelle Teilkette mit der einzufügenden,
-						// da die einzufügende maximaler ist
-						curNode^.nodes := nodelist;
-						curNode^.len := l;
-						exit;
-					END
-					// Ansonsten wenn die einzufügende Teilkette Bestandteil
-					// der aktuell betrachtenden ist
-					ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
-					BEGIN
-						// Breche den Vorgang ab, da die maximale Teilkette
-						// bereits vorhanden ist
-						exit;
-					END;
-				END;
-
-				// Wiederholde dasselbe für das nächste Element
-				curNode := curNode^.next;
-			END;
-
-			// Ansonsten wurde eine neue Teilkette gefunden und eingefügt
-			result := GetMem(SizeOf(TResultList));
-			result^.nodes := nodelist;
-			result^.len := l;
-			result^.rep := k;
-			result^.next := list;
-		END;
-	END;
-
-	FUNCTION AddCollection(newlist, list : ResultListPtr; s : String) : ResultListPtr;
-	BEGIN
-		result := list;
-		IF result <> nil THEN
-		BEGIN
-			WHILE newList <> nil DO
-			BEGIN
-				result := Add(newList^.nodes, newList^.len, newlist^.rep, result, s);
-				newList := newList^.next;
-			END;
-		END
-		ELSE
-		BEGIN
-			result := newList;
-		END;
-	END;
-
-	// Übergeben werden: Die Mindestlänge, Mindesthäufigkeit, aktueller Pfad
-	FUNCTION FindSubstringsInNode(l, k : Integer; path : NodeListPtr;
-	// Der aktuelle Knoten, die aktuelle Länge des Pfages und die Zeichenkette,
-	// aus der der Baum erzeugt wurde
-		node : NodePtr; len : Integer; s : String) : ResultListPtr;
-	BEGIN
-		// Es wird davon ausgegangen, dass keine
-		// Zeichenketten den Kriterien entsprechen
-		result := nil;
-
-		// Solange es noch Nachbarn gibt:
-		WHILE node <> nil DO
-		BEGIN
-			// Wenn sie mindestens l Zeichen lang ist und k-mal vorkommt
-			IF ((len + node^.len) >= l) AND (LeavesBelow(node) >= k) THEN
-			BEGIN
-				// Füge sie dem Ergebnis hinzu
-				result := Add(Add(node, path), node^.len + len, LeavesBelow(node), result, s);
-			END;
-
-			// Füge dem Ergebnis alle gefundenen Teilzeichenketten des Kindes
-			// des aktuellen Knotens hinzu
-			result := AddCollection(
-						FindSubstringsInNode(l, k, Add(node, path), node^.child, node^.len + len, s),
-						result, s);
-
-			// Führe dasselbe Verfahren für den nächsten Nachbarn durch
-			node := node^.next_sibling;
-		END;
-	END;
-
-	PROCEDURE PrintFoundStrings(list : ResultListPtr; s : String);
-	BEGIN
-		WHILE list <> nil DO
-		BEGIN
-			WriteLn(GetStringFrom(list^.nodes, s), ' (', list^.rep, ')');
-			list := list^.next;
-		END;
-	END;
-
-	PROCEDURE DisposeResultList(list : ResultListPtr); FORWARD;
-
-	PROCEDURE FindSubstrings(len, rep : Integer; tree : TSuffixTree);
-	VAR
-		list : ResultListPtr;
-	BEGIN
-		list := FindSubstringsInNode(len, rep, nil, tree.root, 0, tree.s);
-
-		PrintFoundStrings(list, tree.s);
-	END;
-
-	PROCEDURE DisposeNodeList(nlist : NodeListPtr);
-	BEGIN
-		IF nList <> nil THEN
-		BEGIN
-			DisposeNodeList(nList^.next);
-			FreeMem(nList);
-		END;
-	END;
-
-	PROCEDURE DisposeResultList(list : ResultListPtr);
-	BEGIN
-		IF list <> nil THEN
-		BEGIN
-			DisposeNodeList(list^.nodes);
-			DisposeResultList(list^.next);
-			FreeMem(list);
-		END;
-	END;
-
-	PROCEDURE DisposeNode(node : NodePtr);
-	BEGIN
-		IF node <> nil THEN
-		BEGIN
-			DisposeNode(node^.child);
-			DisposeNode(node^.next_sibling);
-			FreeMem(node);
-		END;
-	END;
-
-	PROCEDURE DisposeTree(tree : TSuffixTree);
-	BEGIN
-		DisposeNode(tree.root);
-	END;
-
-BEGIN
-END.
-\end{lstlisting}
+\lstinputlisting[caption=\texttt{suffixtree.pas}]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/suffixtree.pas}
 
 \end{document}
