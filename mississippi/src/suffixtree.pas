@@ -79,7 +79,7 @@ IMPLEMENTATION USES SysUtils;
 		BEGIN
 			// Solange es noch Nachbarn gibt:
 
-			// Wenn der Anfangsbuchstabe der KAnte mit dem gewünschten
+			// Wenn der Anfangsbuchstabe der Kante mit dem gewünschten
 			// Anfangsbuchstaben übereinstimmt
 			IF s[node^.offset + 1] = c THEN
 			BEGIN
@@ -143,7 +143,7 @@ IMPLEMENTATION USES SysUtils;
 		i, j, k, len, offset, nodes : Integer;
 		root, cur, child, mid, newNode : NodePtr;
 	BEGIN
-		s := s + '$';
+		s := s + '$'; //$ Das ist für mein Vim Syntax Highlighting
 
 		// Erstellen eines Knotens mit der Information des gesamten Strings
 		cur := GetMem(SizeOf(TNode));
@@ -225,8 +225,7 @@ IMPLEMENTATION USES SysUtils;
 						// Füge den mittleren Knoten in der Mitte ein
 						ReplaceChildWith(cur, child, mid);
 
-						// Füge die beiden Suffixreste an der neu erstellten
-						// Verzweigung an
+						// Füge die beiden Suffixreste an der neu erstellte Verzweigung an
 						AddChild(mid, newNode);
 						AddChild(mid, child);
 
@@ -250,7 +249,7 @@ IMPLEMENTATION USES SysUtils;
 				END;
 			END;
 		END;
-		// Schließlich fehlt nur noch die Zweisung der Felder des Suffixbaums
+		// Schließlich fehlt nur noch die Zuweisung der Felder des Suffixbaums
 		result.root := root;
 		result.s := s;
 		result.nodes := nodes;
@@ -298,37 +297,38 @@ IMPLEMENTATION USES SysUtils;
 	END;
 
 	FUNCTION Add(nodelist : NodeListPtr; l, k : Integer;
-	             list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
+				 list : ResultListPtr; s : String) : ResultListPtr; OVERLOAD;
 	VAR
 		curNode : ResultListPtr;
 	BEGIN
 		// Das Ergebnis sei die Ursprungsliste
 		result := list;
 
-		// Wenn die einzufügende Teilkette existiert
+		// Wenn die einzufügende Teilkette sinnvoll belegt ist
 		IF nodelist <> nil THEN
 		BEGIN
 			curNode := list;
 
-			// Solange die Ergebnisliste nicht leer ist
+			// Solange die Ergebnisliste nicht vollständig durchschritten wurde
 			WHILE curNode <> nil DO
 			BEGIN
 				// Wenn die Anzahl der Wiederholungen der einzufügenden
 				// Zeichenkette und der aktuellen gleich sind
 				IF curNode^.rep = k THEN
 				BEGIN
-					// Wenn die aktuell betrachtete Teilkette Bestandteil der
+					// Und wenn die aktuell betrachtete Teilkette Bestandteil der
 					// einzufügenden ist
 					IF Pos(GetStringFrom(curNode^.nodes, s), GetStringFrom(nodelist, s)) > 0 THEN
 					BEGIN
-						// Ersetze die aktuelle Teilkette mit der einzufügenden,
-						// da die einzufügende bei gleicher Häufigkeit länger ist
+						// Ersetze die aktuelle Teilkette mit der einzufügenden, da
+						// die einzufügende maximal im Hinblick auf die vorherige ist
 						curNode^.nodes := nodelist;
 						curNode^.len := l;
+						// Und breche den Vorgang ab, da die Teikette
+						// bereits eingefügt wurde
 						exit;
 					END
-					// Ansonsten wenn die einzufügende Teilkette Bestandteil
-					// der aktuell betrachteten ist
+					// Ansonsten wenn der umgekehrte Fall eintritt
 					ELSE IF Pos(GetStringFrom(nodelist, s), GetStringFrom(curNode^.nodes, s)) > 0 THEN
 					BEGIN
 						// Breche den Vorgang ab, da die maximale Teilkette
@@ -337,7 +337,7 @@ IMPLEMENTATION USES SysUtils;
 					END;
 				END;
 
-				// Wiederholde dasselbe für das nächste Element
+				// Wiederhole dasselbe für das nächste Element
 				curNode := curNode^.next;
 			END;
 
@@ -349,6 +349,7 @@ IMPLEMENTATION USES SysUtils;
 			result^.next := list;
 		END;
 	END;
+
 
 	FUNCTION AddCollection(newlist, list : ResultListPtr; s : String) : ResultListPtr;
 	BEGIN
@@ -369,7 +370,7 @@ IMPLEMENTATION USES SysUtils;
 
 	// Übergeben werden: Die Mindestlänge, Mindesthäufigkeit, aktueller Pfad
 	FUNCTION FindSubstringsInNode(l, k : Integer; path : NodeListPtr;
-	// Der aktuelle Knoten, die aktuelle Länge des Pfages und die Zeichenkette,
+	// Der aktuelle Knoten, die aktuelle Länge des Pfades und die Zeichenkette,
 	// aus der der Baum erzeugt wurde
 		node : NodePtr; len : Integer; s : String) : ResultListPtr;
 	BEGIN
@@ -377,7 +378,7 @@ IMPLEMENTATION USES SysUtils;
 		// Zeichenketten den Kriterien entsprechen
 		result := nil;
 
-		// Solange es noch Nachbarn gibt:
+		// Solange der aktuelle Knoten noch existiert
 		WHILE node <> nil DO
 		BEGIN
 			// Wenn sie mindestens l Zeichen lang ist und k-mal vorkommt
@@ -393,10 +394,11 @@ IMPLEMENTATION USES SysUtils;
 						FindSubstringsInNode(l, k, Add(node, path), node^.child, node^.len + len, s),
 						result, s);
 
-			// Führe dasselbe Verfahren für den nächsten Nachbarn durch
+			// Führe dasselbe Verfahren für den nächsten Nachbarn des Knotens durch
 			node := node^.next_sibling;
 		END;
 	END;
+
 
 	PROCEDURE PrintFoundStrings(list : ResultListPtr; s : String);
 	BEGIN
@@ -411,7 +413,9 @@ IMPLEMENTATION USES SysUtils;
 	VAR
 		list : ResultListPtr;
 	BEGIN
+		// Ermittle alle Teilzeichenketten, die die Bedingungen erfüllen
 		list := FindSubstringsInNode(len, rep, nil, tree.root, 0, tree.s);
+		// Und gebe die gefundenen Teilzeichenketten aus.
 		PrintFoundStrings(list, tree.s);
 	END;
 

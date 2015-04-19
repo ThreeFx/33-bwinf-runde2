@@ -59,7 +59,7 @@
 
 \chapter{Aufgabe}
 
-In der Aufgabe 1 soll eine Lösungsmethode für generelle Versionen eines logischen Ausbruchproblems von Charles Lutwidge Dodgson (Lewis Carroll) gefunden werden. Diese Aufgabe ähnelt der vorigen Aufgabe "Faires Füllen", ist aber im Hinblick auf die Komplexität der Verschiebungen schwieriger. Dabei muss eine Reihe an Fahrten gefunden werden, mit denen in einem Turm eingesperrte Personen diesem entkommen können, indem durch einen Seilzug Personen und Gewichte so transportiert werden,
+In der Aufgabe 1 soll eine Lösungsmethode für generelle Versionen eines logischen Ausbruchproblems von Charles Lutwidge Dodgson (Lewis Carroll) gefunden werden. Diese Aufgabe ähnelt der vorigen Aufgabe ``Faires Füllen'', ist aber im Hinblick auf die Komplexität der Verschiebungen schwieriger. Dabei muss eine Reihe an Fahrten gefunden werden, mit denen in einem Turm eingesperrte Personen diesem entkommen können, indem durch einen Seilzug Personen und Gewichte so transportiert werden,
 dass die Personen schnellstmöglich dem Turm entkommen und gleichzeitig die einzelenen Fahrten unbeschadet überstehen.
 
 \bigskip
@@ -156,20 +156,20 @@ Die Funktion $f$ sucht in einer anfänglichen Menge von Zuständen solange weite
 	\begin{gathered}
 	f(3, \set{\set{\set{W 2, P 6}, \set{P 1, P 2}}})\\
 	\equiv f(3, \lambda(\set{\Pi(3, s) | s \in S})\\
-	\equiv f(3, \set{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
+	\equiv f(3, \{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
 	                 \set{\set{P 1, P 6}, \set{W 2, P 2}},\\
-	                 \set{\set{P 1, P 2, W 2}, \set{P 6}}})
+	                 \set{\set{P 1, P 2, W 2}, \set{P 6}}\})
 	\end{gathered}
 \end{equation*}
 Für den nächsten Schritt soll des Platzes halber nur die letzte Menge des ersten Aufrufs von $f$ betrachtet werden:
 \begin{equation*}
 	\begin{gathered}
 		f(3, \set{\set{\set{W 2, P 1, P 2}, \set{P 6}}})\\
-		\equiv f(3, \set{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
+		\equiv f(3, \{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
 		                 \set{\set{W 2}, \set{P 1, P 2, P 6}},\\
 		                 \set{\set{P 1, P 2}, \set{W 2, P 6}},\\
 		                 \set{\set{P 2}, \set{P 1, W 2, P 6}},\\
-		                 \set{\set{P 1, W 2}, \set{P 2, P 6}}})
+		                 \set{\set{P 1, W 2}, \set{P 2, P 6}}\})
 	\end{gathered}
 \end{equation*}
 
@@ -234,7 +234,7 @@ So lässt sich $\Gamma$ anpassen:
 
 Die dargestellte Lösungsidee wurde in der Sprache C\# geschrieben. Sie zeichnet sich durch die Verwendung von effektiven Datentypen aus. Es wurde hierbei weniger Wert auf eine genaue Übertragung der Funktionen gelegt als auf eine schnelle Implementation.
 
-\subsection{Datentypen}
+\section{Datentypen}
 
 Zur Darstellung des Problems werden zwei Klassen definiert:\\
 
@@ -248,7 +248,7 @@ Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakt
 
 \paragraph{\code{BFS} - Die Breitensuche an sich} Diese Klasse führt mit Hilfe der Klasse \code{BFSNode} eine einfache Breitensuche aus und gibt das Ergebnis am Ende aus.
 
-\subsection{Umsetzung der beschriebenen Funktionen}
+\section{Umsetzung der beschriebenen Funktionen}
 
 Die in der Lösungsidee angesprochenen Funktionen mit griechischen Buchstaben sind hier in der Form von Klassenmethoden von \code{ProblemState} modelliert.
 
@@ -453,7 +453,157 @@ public void Solve()
 
 \chapter{Verwendung und Beispiele}
 
-\section{Kompilieren und Ausführen des Programmes.
+\section{Kompilieren und Ausführen des Programmes}
+
+Auf Windows kann das Programm mit dem von Microsoft bereitgestellten Compiler für C\# (\texttt{csc.exe}) auf der Kommandozeile kompiliert werden:\\
+\begin{center}\verb!csc.exe seilschaften.cs!\end{center}
+Auf Linux kann das Programm mit Hilfe von Mono kompiliert werden:
+\begin{center}\verb!mcs seilschaften!\end{center}
+Das entstehende Programm kann auf Windows nativ ausgeführt werden, auf Linux muss der Befehl \texttt{mono} vorangestellt werden:\\
+\begin{center}\verb!seilschaften.exe <Datei>!\end{center}
+\begin{center}\verb!mono seilschaften.exe <Datei>!\end{center}
+
+\section{Beispiele}
+
+Die sieben Beispiele, die auf der Website des BwInf bereitgestellt werden, kann das Programm problemlos bearbeiten:
+\begin{lstlisting}[caption=Lösung für \texttt{seilschaften0.txt}]
+Initial state:
+Up:
+|W75,P90,P105,P195|
+Down:
+||
+Threshold: 15
+Move 1:
+Down: |W75|
+Up:   ||
+Move 2:
+Down: |P90|
+Up:   |W75|
+Move 3:
+Down: |W75|
+Up:   ||
+Move 4:
+Down: |P105|
+Up:   |P90|
+Move 5:
+Down: |P90|
+Up:   |W75|
+Move 6:
+Down: |W75|
+Up:   ||
+Move 7:
+Down: |P195|
+Up:   |P105|W75|
+Move 8:
+Down: |P105|
+Up:   |P90|
+Move 9:
+Down: |W75|
+Up:   ||
+Move 10:
+Down: |P90|
+Up:   |W75|
+Total moves: 10
+Program took 8ms
+Press any key to exit...
+\end{lstlisting}
+
+Für die anderen sechs Probleme werden keine ganzen Lösungen ausgegeben, da sie den Rahmen dieser Dokumentation\footnote{Besonders \texttt{seilschaften2.txt}} sprengen würden. Stattdessen werden nur Beispiel, benötigte Zeit zur Berechnung der Reihe an Fahrten und die Anzahl der Fahrten ausgegeben:
+
+\begin{table}[H]
+	\caption{Ergebnisse für bereitgestellte Beispiele}
+	\begin{tabular}{lrr}
+		\toprule
+		Beispiel & Anzahl Fahrten & Benötigte Zeit \\
+		\midrule
+		seilschaften1.txt & 14 & 17ms \\
+		seilschaften2.txt & 511 & 69ms \\
+		seilschaften3.txt & 27 & 73ms \\
+		seilschaften4.txt & 23 & 136ms \\
+		seilschaften5.txt & - & 17ms \\
+		seilschaften6.txt & 9 & 13ms \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Im folgenden sollen zwei selbst kreierte Beispiele betrachtet werden, die das Programm auf Funktionsfähigkeit untersuchen:
+
+\subsection{Beispiel 1: Selbsteinladenede Gewichte}
+
+Ein Beispiel welches prüft, ob das Programm berücksichtigt, dass Gewichte, die von Beginn am Boden sind, sich nicht selbstständig einladen können:
+
+\begin{lstlisting}[caption=\texttt{test7.in}]
+1
+P 2 ^
+W 1 _
+\end{lstlisting}
+
+Bei diesem Beispiel ist sofort klar, dass die Person, die sich oben im Turm befindet unmöglich aus ihm entkommen kann, da sie nicht mit dem Gewicht, welches sich unten befindet, interagieren kann. Ein Testdurchlauf ergibt:
+
+\begin{lstlisting}[caption=Lösung von \texttt{test7/in}]
+No possible solution!
+Program took 4ms
+Press any key to exit...
+\end{lstlisting}
+
+\subsection{Beispiel 2: Viele Personen: nicht immer optimal}
+
+Dieses Beispiel zielt darauf ab Greedy-Algorithmen, welche Zustände nach der Anzahl an Personen bewerten, zum Scheitern zu bringen.
+
+\begin{lstlisting}[caption=\texttt{test8.in}]
+3
+P 1 _
+S 2 ^
+P 2 _
+P 6 ^
+\end{lstlisting}
+
+Algorithmen, welche immer nach der maximalen Anzahl von Personen am Boden bewerten, scheitern hieran, da sie statt den eigentlich optimalen 2 Zügen einen zusätzlichen brauchen:
+
+\begin{lstlisting}[caption=Nicht optimale Lösung zu \texttt{test8.in}]
+Initial state:
+Up:
+|W2,P6|
+Down:
+|P1,P2|
+Threshold: 3
+Move 1:
+Down: |W2|
+Up:   ||
+Move 2:
+Down: |P6|
+Up:   |P1,W2|
+Move 3:
+Down: |P1|
+Up:   ||
+Total moves: 3
+\end{lstlisting}
+
+Optimal ist es, zu Beginn beide Personen nach oben zu transportieren um so die 6kg schwere Person zu herab zu transportieren und dann die beiden oberen Personen nach unten zu transportieren:
+
+\begin{lstlisting}[caption=Optimale Lösung zu \texttt{test8.in}]
+Initial state:
+Up:
+|W2,P6|
+Down:
+|P1,P2|
+Threshold: 3
+Move 1:
+Down: |P6|
+Up:   |P1|P2|
+Move 2:
+Down: |P1|P2|
+Up:   ||
+Total moves: 2
+Program took 7ms
+Press any key to exit...
+\end{lstlisting}
+
+\section{Fazit und Ausblick auf Erweiterungen}
+
+Die Lösung des Fahrtenproblems durch eine Breitensuche garantiert, dass zwei Bedinungen für alle Anfangszustände immer erfüllt sind: Falls eine Lösung für den aktuellen Zustand existiert wird sie immer gefunden \textbf{und} die gefundene Lösung ist in jedem Fall die kürzestmögliche.\\
+Die Erweiterung der Problemmodellierung durch die beiden Klassen \code{BFS} und \code{BFSNode} ermöglicht es auf einfache Weise Probleme, die nach einem ähnlichen Prinzip lösbar sind, durch kleine Änderungen ohne großen Aufwand ebenfalls zu lösen. Dass ein Problem mit diesen Klassen lösbar ist, muss es zwei Bedinungen erfüllen: Es muss möglich sein, nur anhand des aktuellen Zustandes eine Liste an folgenden Zuständen zu generieren und auch zu Prüfen, ob der Zustand eine Lösung für das
+Problem darstellt. Wenn diese beiden Punkte bei der Problemimplementation eines anderen, ähnlichen Problems beachtet werden, dann gelten dieselben garantien wie oben beschrieben. Ein Beispiel für ein Problem, welches sich genau so lösen lässt ist die Aufgabe ``Faires Füllen'' aus der 1. Runde des diesjährigen BwInf.
 
 \chapter{Vollständiger Quelltext}
 
@@ -523,7 +673,7 @@ public void Solve()
 \chapter{Aufgabe}
 
 In Aufgabe 3 soll eine Zeichenkette auf Hinblick maximaler, sich wiederholender Teilketten einer bestimmten Länge
-untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Dabei soll Rücksicht auf die Skalierbarkeit des Programms genommen werden, sodass Abfragen für große Datenmengen (~25 MB) trotzdem effizient (d.h. in wenigen Minuten) abgewickelt werden.
+untersucht werden. Es handelt sich hierbei um ein informatisches Suchproblem. Dabei soll Rücksicht auf die Skalierbarkeit des Programms genommen werden, sodass Abfragen für große Datenmengen (~25 MB) trotzdem effizient (d.h. in wenigen Minuten) abgewickelt werden. Die Größe der Daten stammt zum Beispiel von Genomsequenzen verschiedener Lebewesen.
 
 \bigskip
 
@@ -1186,12 +1336,13 @@ Das Programm wurde mit dem Free Pascal Compiler (FPC) kompiliert. Dabei wurden d
 Dabei einsteht die ausführbare Datei \texttt{mississippi}\footnote{Auf Windows: \texttt{mississippi.exe}}, welche dann durch den Aufruf mit den entsprechenden Parametern ausgeführt wird:\\
 \begin{center}\verb!./mississippi <Datei> l k!\end{center}
 
-\section{Benchmark}
+\section{Baumaufbau}
 
-Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenketten. Für diese Tests wurde ein Computer mit Intel i7-4700MQ 2.4 GHz 4-Kern-Prozessor und 16GB DDR3 Arbeitsspeicher verwendet. \\
+Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenketten. Für diese Tests wurde ein Computer mit Intel i7-4700MQ 2.4 GHz 4-Kern-Prozessor und 16GB DDR3 Arbeitsspeicher verwendet.
 
-\begin{center}
-\begin{tabular} {l r r}
+\begin{table}
+	\caption{Vergleich der Baumaufbauzeiten}
+\begin{tabular}{l r r}
 	\toprule
 	Zeichenkette & Länge & Zeit \\
 	\midrule
@@ -1204,15 +1355,16 @@ Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeic
 	menschl. X-Chromosom & 151100559 & 472691 ms \\
 	\bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 Neben dem Beweis, dass Männer einfacher gestrickt sind als Frauen, kann hier beobachtet werden, dass der Algorithmus zum Suffixbaumaufbau in etwa quadratischer Zeit zur Länge des Strings läuft.
 
 \section{Beispiele}
 
-Für die Zeichenkette \texttt{CAGGAGGATTA}, die in der Aufgabe als Beispiel verwendet wurde, ergeben sich für folgende Aufrufe die folgenden Ergebnisse:\\
+Hier werden verschiedene Beispiele mit Ergebnissen gezeigt,
 
-\begin{center}
+\begin{table}
+\caption{\texttt{CAGGAGGATTA}}
 \begin{tabular}{rrrl}
 	\toprule
 	Länge & Wiederholungen & Zeit & Ergebnisse \\
@@ -1222,11 +1374,10 @@ Für die Zeichenkette \texttt{CAGGAGGATTA}, die in der Aufgabe als Beispiel verw
 	3 & 4 & 0 ms & - \\
 	\bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
-Für die mitochondriale DNA des Menschen ergeben sich folgende Beispielergebnisse: \\
-
-\begin{center}
+\begin{table}
+	\caption{mitochondriale DNA des Menschen}
 	\begin{tabularx}{\linewidth}{rrrX}
 	\toprule
 	Länge & Wiederholungen & Zeit & Ergebnisse \\
@@ -1236,11 +1387,10 @@ Für die mitochondriale DNA des Menschen ergeben sich folgende Beispielergebniss
 	2 & 1000 & 5 ms & AA (1594), AT (1223), AC (1495), TT (1004), TC (1202), TA (1368), CT (1438), CA (1536), CC (1779) \\
 	\bottomrule
 \end{tabularx}
-\end{center}
+\end{table}
 
-Schließlich folgen noch ein paar Beispiele für die ersten 100.000 Zeichen des E.coli Genoms:
-
-\begin{center}
+\begin{table}[H]
+	\caption{E.coli.100000}
 	\begin{tabularx}{\linewidth}{rrrX}
 	\toprule
 	Länge & Wiederholungen & Zeit & Ergebnisse \\
@@ -1250,13 +1400,12 @@ Schließlich folgen noch ein paar Beispiele für die ersten 100.000 Zeichen des 
 	80 & 2 & 17 ms & GTAGGCCTGATAAGACGCGCCAGCGTCGCA-TCAGGCGTTGAATGCCGGATGCGCTTTGCT-TATCCGGCCTACAAAATCGCAGCG (2) \\
 	\bottomrule
 \end{tabularx}
-\end{center}
+\end{table}
 
 Die Beispiele der restlichen Teilzeichenketten würden den Rahmen dieser Dokumentation sprengen, weswegen sie ohne Ergebnismenge präsentiert werden:\\
 
-Für das vollständige E.coli Genom:
-
-\begin{center}
+\begin{table}
+	\caption{E.coli.4639675}
 	\begin{tabular}{rrr}
 	\toprule
 	Länge & Wiederholungen & Zeit \\
@@ -1267,12 +1416,12 @@ Für das vollständige E.coli Genom:
 	2500 & 2 & 1092 ms \\
 	\bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 Für die aufwändigeren Beispielen wird nun deutlich, dass die Suche nach sehr kurzen und sehr häufigen oder sehr langen Zeichenketten schnell ist, wohingegen die restlichen Abfragen deutlich langsamer sind.\\
-Als letzte Tabelle soll nun die Suche nach Suffixen im Y-Chromosom des Menschen gezeigt werden:\\
 
-\begin{center}
+\begin{table}
+	\caption{Y-Chromosom des Menschen}
 	\begin{tabular}{rrr}
 	\toprule
 	Länge & Wiederholungen & Zeit \\
@@ -1282,7 +1431,7 @@ Als letzte Tabelle soll nun die Suche nach Suffixen im Y-Chromosom des Menschen 
 	500 & 500 & 6934 ms \\
 	\bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 Für Beispielsuchen im menschlichen X-Chromosom besitzt der Rechner auf dem die Testdurchläufe durchgeführt wurden nicht genug Arbeitsspeicher, weswegen sie nicht gezeigt werden können.
 
