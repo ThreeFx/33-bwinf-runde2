@@ -58,7 +58,7 @@ namespace Seilschaften
             // Die Lösung, falls die denn existiert
             BFSNode result = null;
 
-            // Die Anzahl der Fahrten, die man bis zur Ermittlung der Lösung braucht.
+            // Die Anzahl der Züge, die man bis zur Ermittlung der Lösung braucht
             int moves = 0;
 
             // Eine Stoppuhr zum Ermitteln der benötigten Zeit
@@ -109,7 +109,7 @@ namespace Seilschaften
             // Stoppe die Stoppuhr
             sw.Stop();
 
-            // Falls eine Lösung gefudnen wurde
+            // Falls eine Lösung gefunden wurde
             if (result != null)
             {
                 // Gebe sie aus
@@ -196,7 +196,7 @@ namespace Seilschaften
             // Die Liste aller resultierenden Zustände
             List<ProblemState> result = new List<ProblemState>();
 
-            // Erster Schritt: Bestimme die Potenzmenge der
+            // Erster Schritt: Bestimmen der Potenzmengen der
             // oberen und unteren Gewichte
             Weight[][] possibleUpper = Powerset(this.Upper);
             Weight[][] possibleLower = Powerset(this.Lower);
@@ -261,6 +261,7 @@ namespace Seilschaften
             return result;
         }
 
+        // Entnommen aus: http://stackoverflow.com/questions/19890781/creating-a-power-set-of-a-sequence/19891145
         private static Weight[][] Powerset(HashSet<Weight> set)
         {
             // Begonnen wird mit der Urprungsliste

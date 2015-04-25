@@ -18,6 +18,7 @@
 \usepackage{float}
 \usepackage{url}
 \usepackage{braket}
+\usepackage{subfig}
 
 \usepackage{newfloat}
 \DeclareFloatingEnvironment[fileext=lod]{abbildung}
@@ -82,9 +83,12 @@ Alle möglichen Auswahlen aus allen Objekte einer Liste können dabei mathematis
 Die Bestimmung, ob eine Fahrt ungefährlich ist, geschieht durch eine simple Prüfung: Dabei wird die Summe aller Gewichte, die nach oben transportiert werden sollen von der Summe aller Gewichte, welche sich in die andere Richtung bewegen, abgezogen und geprüft, ob das Ergebnis postiv und nicht größer als die vordefinierte Grenze ist. Falls nur Gewichte in einer Fahrt transportiert werden, muss sich die Differenz der Gewichtssummen nicht innerhalb dieser Grenze befinden, da bei der Fahrt
 keine Personen zu Schaden kommen können.\\
 Im folgenden soll diese Beschreibung in der mathematischen Mengenschreibweise ausgedrückt werden. Dabei wird die Menge aller möglichen Züge als $\Gamma$ definiert:
-\begin{dmath}
-	\Gamma(d, \set{U, D}) = \\ \set{\set{u, d} | u \in \wp(U), d \in \wp(d): 0 < \omega(u) - \omega(d) \wedge \Psi(\set{U, D}, d) \wedge (\omega(u) - \omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))}
-\end{dmath}
+\begin{align}
+	\begin{split}
+	\Gamma(d, \set{U, D}) =  &\{\set{u, d} | u \in \wp(U), d \in \wp(d): \\
+	                         & 0 < \omega(u) - \omega(d) \wedge \Psi(\set{U, D}, d) \wedge (\omega(u) - \omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))\}
+	\end{split}
+\end{align}
 
 Wobei U\footnote{Vom englischen ``U''p} und D\footnote{Vom englischen ``D''own} die aktuellen Gewichte auf der oberen und der unteren Seite beschreiben. $\omega(S)$ sei definiert als die Summe aller Gewichte der vorliegenden Menge $S$. $\sigma(S)$ sei dabei die Prüfung, ob in der Menge keine Personen sind:
 \begin{equation}
@@ -103,26 +107,18 @@ Das folgende Beispiel demonstriert die gesamte Formel der Fahrtenfindung. Die Un
 	\Gamma(3, \set{\set{W 2, P 6}, \set{P 1, P 2}}) = \set{\set{\set{W 2}, \emptyset}, \set{\set{W 2}, \set{P 1}}, \set{\set{P 6}, \set{P 1, P 2}}}
 \end{equation*}
 
-Die Ermittlung des aus einer Gewichtebverteilung entstehenden Zustandes geschieht durch die Mengenoperationen der Differenz ($\setminus$) und der Vereinigung ($\cup$). Als Differenz von zwei Mengen $S$ und $T$ wird die Menge $R$ bezeichnet, die alle Elemente enthält, die zwar in $S$, aber nicht in $T$ enthalten sind. Als Vereinigung zweier Mengen $S$ und $T$ bezeichnet man die Menge aller Elemente, die entweder in $S$ oder in $T$ oder in beiden Mengen vorkommen.
-\begin{equation*}
-	\begin{gathered}
-		S \setminus T = \set{r | r \in S \wedge r \not\in T}\\
-		S \cup T = \set{r | r \in B \vee r \in T}
-	\end{gathered}
-\end{equation*}
+Die Ermittlung des aus einer Gewichtebverteilung entstehenden Zustandes geschieht durch die Mengenoperationen der Differenz ($\setminus$) und der Vereinigung ($\cup$). Als Differenz von zwei Mengen $S$ und $T$ wird die Menge $R$ bezeichnet, die alle Elemente enthält, die zwar in $S$, aber nicht in $T$ enthalten sind. Als Vereinigung zweier Mengen $S$ und $T$ bezeichnet man die Menge aller Elemente, die entweder in $S$ oder in $T$ oder in beiden Mengen vorkommen.\\
 Aus einer Menge werden dabei diejenigen Gewichte entfernt, die von jener Menge in die andere transportiert werden und diejenigen Gewichte hinzugefügt, die jetzt zu der Menge gehören. Die Verschiebung der Gewichte geschieht hierbei durch $\gamma$:
 \begin{equation}
 	\gamma(\set{U, D}, \set{u, d}) = \set{(U \setminus u) \cup d), (D \setminus d) \cup u}
 \end{equation}
 
 Für das obige Bespiel ergibt sich dabei:
-\begin{equation*}
-	\begin{gathered}
-		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \emptyset}) = \set{\set{P 6}, \set{P 1, P 2, W 2}}\\
-		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \set{P 1}}) = \set{\set{P 6, P 1}, \set{P 2, W 2}}\\
-		\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{P 6}, \set{P 1, P 2}}) = \set{\set{W 2, P 1, P 2}, \set{P 6}}
-	\end{gathered}
-\end{equation*}
+\begin{align*}
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \emptyset}) =& \set{\set{P 6}, \set{P 1, P 2, W 2}}\\
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \set{P 1}}) =& \set{\set{P 6, P 1}, \set{P 2, W 2}}\\
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{P 6}, \set{P 1, P 2}}) =& \set{\set{W 2, P 1, P 2}, \set{P 6}}
+\end{align*}
 
 Durch die Kombination von $\Gamma$ und $\gamma$ lassen sich alle Zustände, die aus einem spezifizierten Zustand direkt erreicht werden können, definieren. Diese Operation wird durch $\Pi$ beschrieben:
 \begin{equation}
@@ -152,26 +148,20 @@ Dabei bezeichnet $\lambda$ eine Funktion, die eine Menge von Mengen zu einer Men
 \end{equation}
 
 Die Funktion $f$ sucht in einer anfänglichen Menge von Zuständen solange weiter, bis ein Zustand erreicht wird, welcher gelöst ist. Für das obige Beispiel ergibt sich so der folgende erste Schritt:
-\begin{equation*}
-	\begin{gathered}
-	f(3, \set{\set{\set{W 2, P 6}, \set{P 1, P 2}}})\\
-	\equiv f(3, \lambda(\set{\Pi(3, s) | s \in S})\\
-	\equiv f(3, \{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
-	                 \set{\set{P 1, P 6}, \set{W 2, P 2}},\\
-	                 \set{\set{P 1, P 2, W 2}, \set{P 6}}\})
-	\end{gathered}
-\end{equation*}
+\begin{align*}
+	f(3, \set{\set{\set{W 2, P 6}, \set{P 1, P 2}}}) & \\
+	f(3, \lambda(\set{\Pi(3, s) | s \in S}) \equiv & f(3, \{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
+	                                               & \set{\set{P 1, P 6}, \set{W 2, P 2}},\\
+	                                               & \set{\set{P 1, P 2, W 2}, \set{P 6}}\})
+\end{align*}
 Für den nächsten Schritt soll des Platzes halber nur die letzte Menge des ersten Aufrufs von $f$ betrachtet werden:
-\begin{equation*}
-	\begin{gathered}
-		f(3, \set{\set{\set{W 2, P 1, P 2}, \set{P 6}}})\\
-		\equiv f(3, \{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
-		                 \set{\set{W 2}, \set{P 1, P 2, P 6}},\\
-		                 \set{\set{P 1, P 2}, \set{W 2, P 6}},\\
-		                 \set{\set{P 2}, \set{P 1, W 2, P 6}},\\
-		                 \set{\set{P 1, W 2}, \set{P 2, P 6}}\})
-	\end{gathered}
-\end{equation*}
+\begin{align*}
+		f(3, \set{\set{\set{W 2, P 1, P 2}, \set{P 6}}}) \equiv & f(3, \{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
+		                                                        & \set{\set{W 2}, \set{P 1, P 2, P 6}},\\
+		                                                        & \set{\set{P 1, P 2}, \set{W 2, P 6}},\\
+		                                                        & \set{\set{P 2}, \set{P 1, W 2, P 6}},\\
+		                                                        & \set{\set{P 1, W 2}, \set{P 2, P 6}}\})
+\end{align*}
 
 Dabei wird festgestellt, dass der Zustand $\set{\set{W 2}, \set{P 1, P 2, P 6}}$ eine mögliche Lösung des ursprünglichen Problems $\set{\set{W 2, P 6}, \set{P 1, P 2}}$ darstellt und die Suche wird abgebrochen.
 
@@ -205,9 +195,12 @@ Dafür definieren wir $\wp_{n}$ als Potenzmenge, in der jede Menge mindestens $n
 \end{equation}
 
 So lässt sich $\Gamma$ anpassen:
-\begin{dmath}
-	\Gamma(d, \set{U, D}) = \\ \set{\set{u, d} | u \in \wp_{1}(U), d \in \wp_{0}(d): 0 < \omega(u)-\omega(d) \wedge \Psi(\set{U,D},d) \wedge (\omega(u)-\omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))}
-\end{dmath}
+\begin{align}
+\begin{split}
+	\Gamma(d, \set{U, D}) = & \{\set{u, d} | u \in \wp_{1}(U), d \in \wp_{0}(d):\\
+	                        & 0 < \omega(u)-\omega(d) \wedge \Psi(\set{U,D},d) \wedge (\omega(u)-\omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))\}
+\end{split}
+\end{align}
 
 \chapter{Implementation}
 
@@ -232,19 +225,20 @@ So lässt sich $\Gamma$ anpassen:
 }
 
 
-Die dargestellte Lösungsidee wurde in der Sprache C\# geschrieben. Sie zeichnet sich durch die Verwendung von effektiven Datentypen aus. Es wurde hierbei weniger Wert auf eine genaue Übertragung der Funktionen gelegt als auf eine schnelle Implementation.
+Die oben dargestellte Lösungsidee wurde in der Sprache C\# umgesetzt. Sie zeichnet sich durch die Verwendung von effektiven Datentypen aus. Es wurde hierbei weniger Wert auf eine genaue Übertragung der Funktionen gelegt als auf eine schnelle Implementation.
 
 \section{Datentypen}
 
 Zur Darstellung des Problems werden zwei Klassen definiert:\\
 
-\paragraph{\code{Weight} - Ein Objekt} Durch \code{Weight} wird ein Objekt mit bestimmten Eigenschaften wie Art (Person oder Stein), Gewicht (in kg) und Anfangspoition (oben oder unten) dargestellt. Zusätzlich zu diesen durch die Problemstellung beschriebenen Eigenschaften besitzt jedes Gewicht zusätzlich eine eindeutige Kennnummer, mit der es referenzierbar ist.
+\paragraph{\code{Weight} - Ein Objekt} Durch \code{Weight} wird ein Objekt mit bestimmten Eigenschaften wie Art (Person oder Stein), Gewicht (in kg) und Anfangspoition (oben oder unten) dargestellt. Zusätzlich zu diesen in der Aufgabenstellung beschriebenen Eigenschaften besitzt jedes Gewicht eine eindeutige Kennnummer, mit der es referenzierbar ist.
 
 \paragraph{\code{ProblemState} - Ein Zustand des Problems} Mit Hilfe dieser Klasse wird ein Zustand des aktuellen Problems festgehalten. Es besteht aus der Schranke für Personenfahrten, den beiden Mengen, die die oberen und unteren Gewichte beschreiben, und einer Referenz auf den vorigen Zustand.\\
 
-Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakten Darstellung von Breitensuchen ergänzt. Diese wurden unter der Berücksichtigung der Erweiterbarkeit eingefügt, da durch sie alle Breitensuchen beschrieben werden können.
+Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakten Darstellung von Breitensuchen ergänzt. Diese wurden unter der Berücksichtigung der Erweiterbarkeit eingefügt, da durch sie alle ähnlichen Probleme mit demselben Konstrukt gelöst werden können.
 
-\paragraph{\code{BFSNode} - Ein abstrakter Knoten eines Breitensuchebaumes} Durch diese abstrakte Klasse wird ermöglicht, eine Breitensuche als abstrakten Prozess darzustellen. Eine \code{BFSNode} muss drei Methoden zur Verfügung stellen: Eine Methode zur Ermittlung aller aus einem Zustand modellierten folgenden Zustände, eine Methode zur Überprüfung, ob ein bestimmer Zustand bereits gelöst ist und eine Methode zum Ausgeben der Lösung.
+\paragraph{\code{BFSNode} - Ein abstrakter Knoten eines Breitensuchebaumes} Durch diese abstrakte Klasse wird ermöglicht, eine Breitensuche als abstrakten Prozess darzustellen. Eine \code{BFSNode} muss drei Methoden zur Verfügung stellen: Eine Methode dient dabei zur Ermittlung aller aus einem Zustand modellierten folgenden Zustände, welche in dieser Lösung als $\Pi$ modelliert wurde. Hinzu kommt Methode zur Lösungsüberprüfung, welche dem oben definierten $\Omega$ entspricht. Schließlich muss
+dazu noch eine Methode zum Ausgeben der Lösung.
 
 \paragraph{\code{BFS} - Die Breitensuche an sich} Diese Klasse führt mit Hilfe der Klasse \code{BFSNode} eine einfache Breitensuche aus und gibt das Ergebnis am Ende aus.
 
@@ -252,9 +246,10 @@ Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakt
 
 Die in der Lösungsidee angesprochenen Funktionen mit griechischen Buchstaben sind hier in der Form von Klassenmethoden von \code{ProblemState} modelliert.
 
-\paragraph{$\wp(S)$ - \code{Powerset(Weight[] weights)}} Die Potenzmenge wird hierbei durch die Methode \code{Powerset} beschrieben. Sie verhält sich genau wie jene Funktion:
+\paragraph{$\wp(S)$ - \code{Powerset(Weight[] weights)}} Die Potenzmenge wird hierbei durch die Methode \code{Powerset} beschrieben:
 
 \begin{lstlisting}
+// Entnommen aus: http://stackoverflow.com/questions/19890781/creating-a-power-set-of-a-sequence/19891145
 private static Weight[][] Powerset(HashSet<Weight> set)
 {
 	// Begonnen wird mit der Urprungsliste
@@ -288,15 +283,15 @@ private static Weight[][] Powerset(HashSet<Weight> set)
 }
 \end{lstlisting}
 
-\paragraph{$\Pi$, $\Gamma$ - \code{ProblemState.AllPossibleMoves()}}  Durch diese Methode werden alle möglichen neuen Zustände aus einem bestimmten Zustand bestimmt. Sie geht folgendermaßen vor:
+\paragraph{$\Pi$, $\Gamma$ - \code{ProblemState.AllPossibleMoves()}}  Durch diese Methode werden alle möglichen neuen Zustände aus einem bestimmten Zustand bestimmt. Sie wurde folgendermaßen umgesetzt:
 
 \begin{lstlisting}
-private IEnumerable<ProblemState> AllPossibleMoves()
+public override IEnumerable<BFSNode> AllPossibleMoves()
 {
 	// Die Liste aller resultierenden Zustände
     List<ProblemState> result = new List<ProblemState>();
 
-	// Erster Schritt: Bestimme die Potenzmenge der
+	// Erster Schritt: Bestimmen der Potenzmengen der
 	// oberen und unteren Gewichte
     Weight[][] possibleUpper = Powerset(this.Upper);
     Weight[][] possibleLower = Powerset(this.Lower);
@@ -434,7 +429,7 @@ public void Solve()
     // Stoppe die Stoppuhr
     sw.Stop();
 
-    // Falls eine Lösung gefudnen wurde
+    // Falls eine Lösung gefunden wurde
     if (result != null)
     {
         // Gebe sie aus
@@ -526,9 +521,9 @@ Für die anderen sechs Probleme werden keine ganzen Lösungen ausgegeben, da sie
 	\end{tabular}
 \end{table}
 
-Im folgenden sollen zwei selbst kreierte Beispiele betrachtet werden, die das Programm auf Funktionsfähigkeit untersuchen:
+Im folgenden sollen zwei selbst kreierte Beispiele betrachtet werden, die das Programm auf Randfälle untersuchen:
 
-\subsection{Beispiel 1: Selbsteinladenede Gewichte}
+\subsection{Beispiel 1: Selbsteinladende Gewichte}
 
 Ein Beispiel welches prüft, ob das Programm berücksichtigt, dass Gewichte, die von Beginn am Boden sind, sich nicht selbstständig einladen können:
 
@@ -599,11 +594,12 @@ Program took 7ms
 Press any key to exit...
 \end{lstlisting}
 
+
 \section{Fazit und Ausblick auf Erweiterungen}
 
 Die Lösung des Fahrtenproblems durch eine Breitensuche garantiert, dass zwei Bedinungen für alle Anfangszustände immer erfüllt sind: Falls eine Lösung für den aktuellen Zustand existiert wird sie immer gefunden \textbf{und} die gefundene Lösung ist in jedem Fall die kürzestmögliche.\\
 Die Erweiterung der Problemmodellierung durch die beiden Klassen \code{BFS} und \code{BFSNode} ermöglicht es auf einfache Weise Probleme, die nach einem ähnlichen Prinzip lösbar sind, durch kleine Änderungen ohne großen Aufwand ebenfalls zu lösen. Dass ein Problem mit diesen Klassen lösbar ist, muss es zwei Bedinungen erfüllen: Es muss möglich sein, nur anhand des aktuellen Zustandes eine Liste an folgenden Zuständen zu generieren und auch zu Prüfen, ob der Zustand eine Lösung für das
-Problem darstellt. Wenn diese beiden Punkte bei der Problemimplementation eines anderen, ähnlichen Problems beachtet werden, dann gelten dieselben garantien wie oben beschrieben. Ein Beispiel für ein Problem, welches sich genau so lösen lässt ist die Aufgabe ``Faires Füllen'' aus der 1. Runde des diesjährigen BwInf.
+Problem darstellt. Wenn diese beiden Punkte bei der Problemimplementation eines anderen, ähnlichen Problems beachtet werden, dann gelten dieselben Garantien wie oben beschrieben. Ein Beispiel für ein Problem, welches sich genau so lösen lässt, ist die Aufgabe ``Faires Füllen'' aus der 1. Runde des diesjährigen BwInf.
 
 \chapter{Vollständiger Quelltext}
 
@@ -1340,7 +1336,7 @@ Dabei einsteht die ausführbare Datei \texttt{mississippi}\footnote{Auf Windows:
 
 Anbei sind einige Zeiten für den Aufbau des Suffixbaumes für verschiedene Zeichenketten. Für diese Tests wurde ein Computer mit Intel i7-4700MQ 2.4 GHz 4-Kern-Prozessor und 16GB DDR3 Arbeitsspeicher verwendet.
 
-\begin{table}
+\begin{table}[H]
 	\caption{Vergleich der Baumaufbauzeiten}
 \begin{tabular}{l r r}
 	\toprule
@@ -1363,7 +1359,7 @@ Neben dem Beweis, dass Männer einfacher gestrickt sind als Frauen, kann hier be
 
 Hier werden verschiedene Beispiele mit Ergebnissen gezeigt,
 
-\begin{table}
+\begin{table}[H]
 \caption{\texttt{CAGGAGGATTA}}
 \begin{tabular}{rrrl}
 	\toprule
@@ -1376,7 +1372,7 @@ Hier werden verschiedene Beispiele mit Ergebnissen gezeigt,
 \end{tabular}
 \end{table}
 
-\begin{table}
+\begin{table}[H]
 	\caption{mitochondriale DNA des Menschen}
 	\begin{tabularx}{\linewidth}{rrrX}
 	\toprule
@@ -1404,50 +1400,50 @@ Hier werden verschiedene Beispiele mit Ergebnissen gezeigt,
 
 Die Beispiele der restlichen Teilzeichenketten würden den Rahmen dieser Dokumentation sprengen, weswegen sie ohne Ergebnismenge präsentiert werden:\\
 
-\begin{table}
+\begin{table}[H]
 	\caption{E.coli.4639675}
-	\begin{tabular}{rrr}
+\begin{tabular}{rrr}
 	\toprule
 	Länge & Wiederholungen & Zeit \\
 	\midrule
-	20 & 20 & 990ms \\
+	20 & 20 & 990 ms \\
 	50 & 20 & 1000 ms \\
 	1000 & 2 & 22082 ms \\
 	2500 & 2 & 1092 ms \\
 	\bottomrule
 \end{tabular}
 \end{table}
-
-Für die aufwändigeren Beispielen wird nun deutlich, dass die Suche nach sehr kurzen und sehr häufigen oder sehr langen Zeichenketten schnell ist, wohingegen die restlichen Abfragen deutlich langsamer sind.\\
-
-\begin{table}
+\quad
+\begin{table}[H]
 	\caption{Y-Chromosom des Menschen}
-	\begin{tabular}{rrr}
+\begin{tabular}{rrr}
 	\toprule
 	Länge & Wiederholungen & Zeit \\
 	\midrule
 	2 & 1000000 & 19576 ms \\
-	50 & 200 & 6790ms \\
+	5 & 800000 & 11075 ms \\
+	50 & 200 & 6790 ms \\
 	500 & 500 & 6934 ms \\
 	\bottomrule
 \end{tabular}
 \end{table}
 
+
+Für die aufwändigeren Beispielen wird nun deutlich, dass die Suche nach sehr kurzen und sehr häufigen oder sehr langen Zeichenketten schnell ist, wohingegen die restlichen Abfragen deutlich langsamer sind.\\
 Für Beispielsuchen im menschlichen X-Chromosom besitzt der Rechner auf dem die Testdurchläufe durchgeführt wurden nicht genug Arbeitsspeicher, weswegen sie nicht gezeigt werden können.
 
 \section{Fazit und Ausblick auf Erweiterungen}
 
-Abschließend kann gesagt werden, dass die gewählte Methode des Durchsuchen einer Zeichenkette nach bestimmten Teilzeichenketten durch den Aufbau und den Durchlauf von Suffixbäumen eine geeigenete Methode darstellt, um auch sehr große Zeichenketten effizient verarbeiten zu können.\\
+Abschließend kann gesagt werden, dass die gewählte Methode des Durchsuchens einer Zeichenkette nach bestimmten Teilzeichenketten durch den Aufbau und den Durchlauf von Suffixbäumen eine geeigenete Methode darstellt, um auch sehr große Zeichenketten effizient verarbeiten zu können.\\
 Trotz der relativ schnellen Konstruktion von Suffixbäumen, läuft der Konstruktionsalgorithmus im Hinblick auf die Länge der Zeichenkette in quadratischer Zeit. Als alternativer Konstruktionsalgorithmus kann Ukkonens Algorithmus\footnote{\url{https://www.cs.helsinki.fi/u/ukkonen/SuffixT1withFigs.pdf}} verwendet werden, welcher in linearer Zeit zur Länge der Eingabe läuft. Ein weiterer Vorteil dieses Algorithmus ist seine Eigenschaft, den Baum ``Online'' aufzubauen, das bedeutet Zeichen für
-Zeichen vom Anfang der Eingabekette, sodass noch größere Zeichenketten verarbeitet werden können, da sie nicht als ganzes Eingelesen und im Arbeitsspeicher abgelegt werden müssen. Der Algorithmus wurde jedoch aufgrund seiner Komplexität nicht umgesetzt und bleibt ``nur'' eine Erweiterungsmöglichkeit.\\
-Eine weitere Verwendungsmöglichkeit von Suffixbäumen ist der Vergleich und die Bestimmung von Gemeinsamkeiten mehrerer Teilzeichenketten. Um diese Erweiterung zu Nutzen muss lediglich die Eingabeteilzeichenkette verändert werden, sodass die beide Teilzeichenketten hintereinander eingelesen werden, getrennt durch ein spezielles Zeichen, welches nicht in beiden Zeichenketten vorkommt. Bäume, die aus mehreren Zeichenketten bestehen werden auch \textit{generalized suffix
+Zeichen vom Anfang der Eingabekette, sodass noch größere Zeichenketten verarbeitet werden können, da sie nicht als ganzes eingelesen und im Arbeitsspeicher abgelegt werden müssen. Der Algorithmus wurde jedoch aufgrund seiner Komplexität nicht umgesetzt und bleibt ``nur'' eine Erweiterungsmöglichkeit.\\
+Eine weitere Verwendungsmöglichkeit von Suffixbäumen ist der Vergleich und die Bestimmung von Gemeinsamkeiten mehrerer Teilzeichenketten. Um diese Erweiterung zu Nutzen muss lediglich die Eingabeteilzeichenkette verändert werden, sodass beide Teilzeichenketten hintereinander eingelesen werden, getrennt durch ein spezielles Zeichen, welches nicht in beiden Zeichenketten vorkommt. Bäume, die aus mehreren Zeichenketten bestehen werden auch \textit{generalized suffix
 trees}\footnote{``Verallgemeinerte Suffixbäume''} genannt.
 
 \chapter{Vollständiger Quelltext}
 
+\lstinputlisting[caption=\texttt{mississippi.pas}, firstline=3]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/mississippi.pas}
 
-\lstinputlisting[caption=\texttt{mississippi.pas}]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/mississippi.pas}
-
-\lstinputlisting[caption=\texttt{suffixtree.pas}]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/suffixtree.pas}
+\lstinputlisting[caption=\texttt{suffixtree.pas}, firstline=3]{C:/Users/Ben/Documents/GitHub/bwinf2/mississippi/src/suffixtree.pas}
 
 \end{document}
