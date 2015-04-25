@@ -1,0 +1,594 @@
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{breqn}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{Inconsolata}
+\usepackage[usenames, dvipsnames]{color}
+\usepackage{booktabs, tabularx}
+\usepackage{float}
+\usepackage{url}
+\usepackage{braket}
+\usepackage{subfig}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Ben Fiedler (3345)} \chead{Aufgabe \thepart} \rhead{\thepage}
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+\definecolor{codegray}{gray}{0.9}
+
+\newcommand{\code}[1] {
+	\colorbox{codegray}{\lstinline|#1|}
+}
+
+\begin{document}
+
+\title{33. Bundeswettbewerb Informatik 2. Runde\\ \Large Aufgabe 1: Seilschaften}
+\author{Ben Fiedler}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{Aufgabe}
+
+In der Aufgabe 1 soll eine Lösungsmethode für generelle Versionen eines logischen Ausbruchproblems von Charles Lutwidge Dodgson (Lewis Carroll) gefunden werden. Diese Aufgabe ähnelt der vorigen Aufgabe ``Faires Füllen'', ist aber im Hinblick auf die Komplexität der Verschiebungen schwieriger. Dabei muss eine Reihe an Fahrten gefunden werden, mit denen in einem Turm eingesperrte Personen diesem entkommen können, indem durch einen Seilzug Personen und Gewichte so transportiert werden,
+dass die Personen schnellstmöglich dem Turm entkommen und gleichzeitig die einzelenen Fahrten unbeschadet überstehen.
+
+\bigskip
+
+\chapter{Lösungsidee}
+
+\section{Modellierung}
+
+Als Lösungsmethode für das Problem wurde die Breitensuche (BFS) aller möglichen Zustände gewählt. Durch die Aufgabenstellung ergibt sich daraus ein azyklischer, gerichteter Baum, dessen Knoten jeweils einen Zustand des Problems modellieren. Ein Zustand besteht aus zwei Listen, von denen die eine die sich oben befindenden Objekte beschreibt und die andere die unteren.
+
+\section{Ermittlung aller Zustände}
+
+Der Baum wird ausgehend von dem Ausgangszustand schrittweise aufgebaut und durchlaufen, indem zu jedem Zustand in der aktuellen horizontalen Ebene alle nachfolgenden Zustände generiert werden, die im nächsten Schritt betrachtet werden. In diesem Fall soll der Baum nur implizit durch die unten modellierten Funktionen dargestellt werden.\\
+Um alle Zustände zu ermitteln, werden alle Gewichtverschiebungskombinationen der sich oben und unten sich befindenden Objekte ausprobiert und nur valide Fahrten, also nur Fahrten, die die Personen unbeschadet überstehen, ausgewählt. Alle möglichen Verschiebungen in einem Zustand verknüpfen hierbei alle möglichen Auswahlen der Gewichte der oberen Liste mit denen der unteren.
+Alle möglichen Auswahlen aus allen Objekte einer Liste können dabei mathematisch als Potenzmenge ($\wp$) ausgedrückt werden:\\
+\begin{equation}
+	\wp(\set{1,2,3}) = \set{\emptyset,\set{1},\set{2},\set{3},\set{1,2},\set{1,3},\set{2,3},\set{1,2,3}}
+\end{equation}
+
+Die Bestimmung, ob eine Fahrt ungefährlich ist, geschieht durch eine simple Prüfung: Dabei wird die Summe aller Gewichte, die nach oben transportiert werden sollen von der Summe aller Gewichte, welche sich in die andere Richtung bewegen, abgezogen und geprüft, ob das Ergebnis postiv und nicht größer als die vordefinierte Grenze ist. Falls nur Gewichte in einer Fahrt transportiert werden, muss sich die Differenz der Gewichtssummen nicht innerhalb dieser Grenze befinden, da bei der Fahrt
+keine Personen zu Schaden kommen können.\\
+Im folgenden soll diese Beschreibung in der mathematischen Mengenschreibweise ausgedrückt werden. Dabei wird die Menge aller möglichen Züge als $\Gamma$ definiert:
+\begin{align}
+	\begin{split}
+	\Gamma(d, \set{U, D}) =~&\{\set{u, d} | u \in \wp(U), d \in \wp(d): \\
+	                         & 0 < \omega(u) - \omega(d) \wedge \Psi(\set{U, D}, d) \wedge (\omega(u) - \omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))\}
+	\end{split}
+\end{align}
+
+Wobei U\footnote{Vom englischen ``U''p} und D\footnote{Vom englischen ``D''own} die aktuellen Gewichte auf der oberen und der unteren Seite beschreiben. $\omega(S)$ sei definiert als die Summe aller Gewichte der vorliegenden Menge $S$. $\sigma(S)$ sei dabei die Prüfung, ob in der Menge keine Personen sind:
+\begin{equation}
+	\sigma(S) = \forall s \in S: \neg \textrm{IstPerson}(s)
+\end{equation}
+
+$\Psi$ eliminiert hierbei den letzten Randfall. Dieser zeichnet sich dadurch aus, dass er den Transport mehrerer Personen, die alleine zu schwer gewesen wären, um die Fahrt zu überleben, ermöglicht. Dabei werden erst die benötigten Gewichte von oben nach unten geworfen, mit denen die Personen in der nächsten Fahrt herabfahren. Um feststellen zu können, ob eine Menge an Gewichten in einer vorherigen Fahrt von oben herabgeworfen wurde, muss geprüft werden, ob der obere Zustand eine Obermenge der nach oben
+zu transportierenden Gewichte ist. Um die obere Liste des vorigen Zustandes herauszufinden, wird die Funktion $\epsilon$ verwendet. Anzumerken ist, dass der Randfall nur beachtet werden muss, wenn sich keine Personen unten befinden, da sie sonst die Gewichte, die sich unten befinden, ein- und ausladen könnte.
+\begin{equation}
+	\Psi(\set{U, D}, d) = \exists p \in D : \textrm{IstPerson}(p) \vee \epsilon(U) \supset d
+\end{equation}
+
+Ein Beispiel hierfür findet sich in dem ersten Beispiel der Aufgabe, in dem zuerst das 75kg schwere Gewicht heruntergelassen werden muss, bevor die 90kg schwere Person dann sicher am Boden ankommen kann.\\
+Das folgende Beispiel demonstriert die gesamte Formel der Fahrtenfindung. Die Unterscheidung von Personen und Gewichten geschieht dabei durch die Voranstellung eines ``P'' oder ``W'' vor dem Gewicht, welches das Gewicht als ``P''erson oder Ge``W''icht\footnote{Eigentlich vom englischen ``W''eight} kennzeichnet.
+\begin{equation*}
+	\Gamma(3, \set{\set{W 2, P 6}, \set{P 1, P 2}}) = \set{\set{\set{W 2}, \emptyset}, \set{\set{W 2}, \set{P 1}}, \set{\set{P 6}, \set{P 1, P 2}}}
+\end{equation*}
+
+Die Ermittlung des aus einer Gewichtebverteilung entstehenden Zustandes geschieht durch die Mengenoperationen der Differenz ($\setminus$) und der Vereinigung ($\cup$). Als Differenz von zwei Mengen $S$ und $T$ wird die Menge $R$ bezeichnet, die alle Elemente enthält, die zwar in $S$, aber nicht in $T$ enthalten sind. Als Vereinigung zweier Mengen $S$ und $T$ bezeichnet man die Menge aller Elemente, die entweder in $S$ oder in $T$ oder in beiden Mengen vorkommen.\\
+Aus einer Menge werden dabei diejenigen Gewichte entfernt, die von jener Menge in die andere transportiert werden und diejenigen Gewichte hinzugefügt, die jetzt zu der Menge gehören. Die Verschiebung der Gewichte geschieht hierbei durch $\gamma$:
+\begin{equation}
+	\gamma(\set{U, D}, \set{u, d}) = \set{(U \setminus u) \cup d), (D \setminus d) \cup u}
+\end{equation}
+
+Für das obige Bespiel ergibt sich dabei:
+\begin{align*}
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \emptyset}) =& \set{\set{P 6}, \set{P 1, P 2, W 2}}\\
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{W 2}, \set{P 1}}) =& \set{\set{P 6, P 1}, \set{P 2, W 2}}\\
+	\gamma(\set{\set{W 2, P 6}, \set{P 1, P 2}}, \set{\set{P 6}, \set{P 1, P 2}}) =& \set{\set{W 2, P 1, P 2}, \set{P 6}}
+\end{align*}
+
+Durch die Kombination von $\Gamma$ und $\gamma$ lassen sich alle Zustände, die aus einem spezifizierten Zustand direkt erreicht werden können, definieren. Diese Operation wird durch $\Pi$ beschrieben:
+\begin{equation}
+	\Pi(d, s) = \set{\gamma(s, v) | v \in \Gamma(d, s)}
+\end{equation}
+
+\section{Finden einer Lösung}
+
+Nun soll zu einem Zustand eine Kombination von Fahrten gefunden werden, sodass sich im Endzustand sich keine Personen mehr oben befinden. Mathematisch lässt sich dieser so formulieren:
+\begin{equation}
+	\Omega(\set{U, D}) = \nexists u \in U : \textrm{IstPerson}(u)
+\end{equation}
+
+Dafür werden zuerst alle Zustände bestimmt, die sich aus dem Anfangszustand ergeben und geprüft, ob sie dem Kriterium $\Omega$ entsprechen. Falls dies der Fall ist, ist das Problem gelöst und die Suche kann abgebrochen werden. Ansonsten werden aus diesen Zuständen wiederum alle resultierenden Zustände betimmt, bis schließlich ein Zustand gefunden ist, der das Lösungskriterium erfüllt.\\
+Um dies zu erreichen, kann man wiederholt $\Pi$ aufrufen, bis ein Zustand erreicht wird, für den $\Omega$ zutrifft:
+\begin{equation}
+	f(d, S) =
+	\begin{cases}
+		S, &\textrm{falls}~\exists s \in S: \Omega(S)\\
+		f(d, \lambda(\set{\Pi(d, s) | s \in S}), & \textrm{sonst}
+	\end{cases}
+\end{equation}
+
+Dabei bezeichnet $\lambda$ eine Funktion, die eine Menge von Mengen zu einer Menge vereinigt:
+\begin{equation}
+	\lambda(\set{A_{1}, A_{2}, .. A_{n}}) = \emptyset \cup A_{1} \cup A_{2}, \cup .. \cup A_{n}
+\end{equation}
+
+Die Funktion $f$ sucht in einer anfänglichen Menge von Zuständen solange weiter, bis ein Zustand erreicht wird, welcher gelöst ist. Für das obige Beispiel ergibt sich so der folgende erste Schritt:
+\begin{align*}
+	f(3, \set{\set{\set{W 2, P 6}, \set{P 1, P 2}}}) & \\
+	f(3, \lambda(\set{\Pi(3, s) | s \in S}) \equiv &~f(3, \{\set{\set{P 6}, \set{P 1, P 2, W 2}},\\
+	                                               & \set{\set{P 1, P 6}, \set{W 2, P 2}},\\
+	                                               & \set{\set{P 1, P 2, W 2}, \set{P 6}}\})
+\end{align*}
+Für den nächsten Schritt soll des Platzes halber nur die letzte Menge des ersten Aufrufs von $f$ betrachtet werden:
+\begin{align*}
+		f(3, \set{\set{\set{W 2, P 1, P 2}, \set{P 6}}}) \equiv &~f(3, \{\set{\set{W 2, P 2},\set{P 1, P 6}},\\
+		                                                        & \set{\set{W 2}, \set{P 1, P 2, P 6}},\\
+		                                                        & \set{\set{P 1, P 2}, \set{W 2, P 6}},\\
+		                                                        & \set{\set{P 2}, \set{P 1, W 2, P 6}},\\
+		                                                        & \set{\set{P 1, W 2}, \set{P 2, P 6}}\})
+\end{align*}
+
+Dabei wird festgestellt, dass der Zustand $\set{\set{W 2}, \set{P 1, P 2, P 6}}$ eine mögliche Lösung des ursprünglichen Problems $\set{\set{W 2, P 6}, \set{P 1, P 2}}$ darstellt und die Suche wird abgebrochen.
+
+\section{Optimierungen}
+
+Der Pfad einer korrekten Lösung ist im schlimmsten Fall $2^{n} - 1$ Fahrten lang, da es insgesamt nur $2^{n}$ verschiedene Verteilungsmöglichkeiten der $n$ Gewichte eines Problems gibt. Dabei werden im schlimmsten Fall vom Anfangszustand, bei dem sich keine Objekte auf dem Boden befinden, alle Gewichte Schritt für Schritt nach unten transportiert.
+
+\subsection{Optimierung 1: Frühzeitiges Abbrechen bei Wiederholung}
+
+Zu beachten ist, dass trotz einer Einschränkung der Suchtiefe die Suche mit der Funktion $f$ nicht nur $2^{n} - 1$ Schritte benötigt, sondern Zustände, die wiederholt vorkommen, erneut berechnet, was nicht mehr notwenig ist, da die vorher gefundene Lösung weniger Schritte zur Erreichung des Zustandes benötigt als der aktuelle Pfad. So kann bei aufkommen eines wiederholten Zustandes die Suche abgebrochen werden. Dazu wird die Funktion $f$ um eine Menge der bereits durchschrittenen Zustände
+erweitert:
+\begin{equation}
+	f(d, S, V) =
+	\begin{cases}
+		S,&\textrm{falls}~\exists s \in S: \Omega(s)\\
+		f(d, \lambda(\set{\Pi(d, s) | s \in S, s \not\in V}), V \cup \lambda(\set{\Pi(d, s) | s \in S})), & \textrm{sonst}
+	\end{cases}
+\end{equation}
+
+Die Lösungsfunktion wird nun durch $g$ dargestellt:
+\begin{equation}
+	g(d, S) = f(d, \set{S}, \emptyset)
+\end{equation}
+
+\subsection{Optimierung 2: Auslassen unmöglicher Fahrten}
+
+Durch die Verwendung der Potenzmenge bei der Verschiebung werden immer auch Fahrten ausprobiert, die unmöglich sind. Diese entstehen zum Beispiel wenn versucht wird eine beliebige Menge an Objekten gegen die leere Menge nach oben zu verschieben. Fälle wie diese lassen im Voraus ausschließen, indem die leere Menge bei den von oben zu transportierenden Objekten ausgeschlossen wird.\\
+Dafür definieren wir $\wp_{n}$ als Potenzmenge, in der jede Menge mindestens $n$ Elemente hat:
+\begin{equation}
+	\wp_{n} = \set{s | s \in \wp(S): |s| \geq n}
+\end{equation}
+
+So lässt sich $\Gamma$ anpassen, sodass nun nur noch Mengen von möglichen Gewichten in Betracht gezogen werden, die auchtatsächlich möglich sein könnten.
+\begin{align}
+\begin{split}
+	\Gamma(d, \set{U, D}) =~& \{\set{u, d} | u \in \wp_{1}(U), d \in \wp_{0}(d):\\
+	                        & 0 < \omega(u)-\omega(d) \wedge \Psi(\set{U,D},d) \wedge (\omega(u)-\omega(d) \leq d \vee (\sigma(u) \wedge \sigma(d)))\}
+\end{split}
+\end{align}
+
+\chapter{Implementation}
+
+\lstset{language=[Sharp]C,
+  basicstyle=\ttfamily\scriptsize,
+  numbers=left,
+  showspaces=false,
+  showtabs=false,
+  breaklines=true,
+  showstringspaces=false,
+  breakatwhitespace=true,
+  tabsize=4,
+  escapeinside={(*@}{@*)},
+  commentstyle=\color{greencomments},
+  keywordstyle=\color{bluekeywords},
+  stringstyle=\color{redstrings},
+  literate={ö}{{\"o}}1
+           {ä}{{\"a}}1
+           {ü}{{\"u}}1
+           {ß}{{\ss}}1
+           {Ü}{{\"U}}1
+}
+
+
+Die oben dargestellte Lösungsidee wurde in der Sprache C\# umgesetzt. Sie zeichnet sich durch die Verwendung von effektiven Datentypen aus. Es wurde hierbei weniger Wert auf eine genaue Übertragung der Funktionen gelegt als auf eine schnelle Implementation.
+
+\section{Datentypen}
+
+Zur Darstellung des Problems werden zwei Klassen definiert:\\
+
+\paragraph{\code{Weight} - Ein Objekt} Durch \code{Weight} wird ein Objekt mit bestimmten Eigenschaften wie Art (Person oder Stein), Gewicht (in kg) und Anfangspoition (oben oder unten) dargestellt. Zusätzlich zu diesen in der Aufgabenstellung beschriebenen Eigenschaften besitzt jedes Gewicht eine eindeutige Kennnummer, mit der es referenzierbar ist.
+
+\paragraph{\code{ProblemState} - Ein Zustand des Problems} Mit Hilfe dieser Klasse wird ein Zustand des aktuellen Problems festgehalten. Es besteht aus der Schranke für Personenfahrten, den beiden Mengen, die die oberen und unteren Gewichte beschreiben, und einer Referenz auf den vorigen Zustand.\\
+
+Diese beiden konkreten Datentypen werden durch zwei weitere Klassen zur abstrakten Darstellung von Breitensuchen ergänzt. Diese wurden unter der Berücksichtigung der Erweiterbarkeit eingefügt, da durch sie alle ähnlichen Probleme mit demselben Konstrukt gelöst werden können.
+
+\paragraph{\code{BFSNode} - Ein abstrakter Knoten eines Breitensuchebaumes} Durch diese abstrakte Klasse wird ermöglicht, eine Breitensuche als abstrakten Prozess darzustellen. Eine \code{BFSNode} muss drei Methoden zur Verfügung stellen: Eine Methode dient dabei zur Ermittlung aller aus einem Zustand modellierten folgenden Zustände, welche in dieser Lösung als $\Pi$ modelliert wurde. Hinzu kommt Methode zur Lösungsüberprüfung, welche dem oben definierten $\Omega$ entspricht. Schließlich muss
+dazu noch eine Methode zum Ausgeben der Lösung.
+
+\paragraph{\code{BFS} - Die Breitensuche an sich} Diese Klasse führt mit Hilfe der Klasse \code{BFSNode} eine einfache Breitensuche aus und gibt das Ergebnis am Ende aus.
+
+\section{Umsetzung der beschriebenen Funktionen}
+
+Die in der Lösungsidee angesprochenen Funktionen mit griechischen Buchstaben sind hier in der Form von Klassenmethoden von \code{ProblemState} modelliert.
+
+\paragraph{$\wp(S)$ - \code{Powerset(HashSet<Weight> weights)}} Die Potenzmenge wird hierbei durch die Methode \code{Powerset} beschrieben:
+
+\begin{lstlisting}
+// Entnommen aus: http://stackoverflow.com/questions/19890781/creating-a-power-set-of-a-sequence/19891145
+private static Weight[][] Powerset(HashSet<Weight> set)
+{
+	// Begonnen wird mit der Urprungsliste
+    Weight[] seq = set.ToArray();
+	// Die Potenzmenge umfasst nacher alle 2^n Elemente
+    Weight[][] powerset = new Weight[1 << seq.Length][];
+	// Die leere Menge wird als ersten eingefügt
+    powerset[0] = new Weight[0];
+	// Für jedes Gewicht in der Ursprungsliste
+    for (int i = 0; i < seq.Length; i++)
+    {
+		// Bestimme das aktuelle Gewicht
+        Weight cur = seq[i];
+		// Bestimme die Anzahl der bereits eingefügten Teilmengen
+        int count = 1 << i;
+		// Für alle bereits exitierenden Teilmengen
+        for (int j = 0; j < count; j++)
+        {
+			// Bestimme die Liste, an der das aktuelle Element anzufügen ist
+            Weight[] source = powerset[j];
+
+			// Füge eine neue Teilmenge bestehend aus der aktuellen Liste
+			// mit dem aktuellen Element in die Potenzmenge ein
+            Weight[] destination = powerset[count + j] = new Weight[source.Length + 1];
+            for (int q = 0; q < source.Length; q++)
+                destination[q] = source[q];
+            destination[source.Length] = cur;
+        }
+    }
+    return powerset;
+}
+\end{lstlisting}
+
+\paragraph{$\Pi$, $\Gamma$ - \code{ProblemState.AllPossibleMoves()}}  Durch diese Methode werden alle möglichen neuen Zustände aus einem bestimmten Zustand bestimmt. Sie wurde folgendermaßen umgesetzt:
+
+\begin{lstlisting}
+public override IEnumerable<BFSNode> AllPossibleMoves()
+{
+	// Die Liste aller resultierenden Zustände
+    List<ProblemState> result = new List<ProblemState>();
+
+	// Erster Schritt: Bestimmen der Potenzmengen der
+	// oberen und unteren Gewichte
+    Weight[][] possibleUpper = Powerset(this.Upper);
+    Weight[][] possibleLower = Powerset(this.Lower);
+
+	// Für alle nicht-leeren Mengen der Potenzmenge oberen Menge
+    for (int i = 1; i < possibleUpper.Length; i++)
+    {
+		// Für alle Mengen der Potenzmenge der unteren Gewichte
+        for (int j = 0; j < possibleLower.Length; j++)
+        {
+			// Bestimme die Gewichtsdifferenz der Mengen
+            int diff = possibleUpper[i].Sum(x => x.ActualWeight)
+                     - possibleLower[j].Sum(x => x.ActualWeight);
+			// Wenn die Differnz größer als 0 ist und der Randfall Psi
+			// beachtet wird
+            if (diff > 0 && IsValid(possibleLower[j])
+			// Und entweder die Differenz nicht größer als dir Schranke d ist
+			// oder alle transportierten Objekte Gewichte sind.
+                && (diff <= d || (possibleUpper[i].All(x => !x.IsPerson)
+                                  && possibleLower[j].All(x => !x.IsPerson))))
+            {
+				// Füge die resultierende Fahrt aus der Gewichteverschiebung
+				// dem Ergebnis hinzu
+                result.Add(this.Move(possibleUpper[i], possibleLower[j]));
+            }
+        }
+    }
+    return result;
+}
+
+// Die Prüfung des Randfalls Psi:
+// Eine Verschibung von unteren Gewichten ist genau dann valid, wenn
+// (0. Keine Gewichte von unten benötigt werden)
+// 1. Sich eine Person unten befindet, die die Gewichte ein- und ausladen kann
+// 2. Oder die Gewichte, die nach oben bewegt werden sollen gerade erst herunter
+//   gelassen worden sind.
+private bool IsValid(Weight[] weights)
+{
+		// Keine Gewichte bewegt werden
+    return weights.Length == 0
+		// Oder sich unten eine Person befindet
+        || this.Lower.Any(x => x.IsPerson)
+		// Oder die Gewichte gerade erst herunter gelassen worden sind
+        || (this.parent != null ? this.parent.Upper.IsSupersetOf(weights) : false);
+}
+\end{lstlisting}
+
+\paragraph{$\gamma$ - \code{ProblemState.Move(Weight[] fromUpper, Weight[] fromLower)}} Die oben mit $\gamma$ beschriebene eigentliche Fahrt wird durch die Methode \code{Move} umgesetzt, die durch Mengenoperationen die Gewichte verschiebt:
+
+\begin{lstlisting}
+private ProblemState Move(Weight[] fromUpper, Weight[] fromLower)
+{
+	// Erstelle einen neuen Zustand aus dem aktuellen.
+    ProblemState result = new ProblemState(this);
+
+	// Entferne die nach unten bewegten Gewichte von oben
+    result.Upper.ExceptWith(fromUpper);
+	// und entferne die nach oben bewegen Gewichte von unten
+    result.Lower.ExceptWith(fromLower);
+
+	// Füge den oberen Gewichten die von unten bewegten hinzu
+    result.Upper.UnionWith(fromLower);
+	// und den unteren die von oben kommenden
+    result.Lower.UnionWith(fromUpper);
+
+    return result;
+}
+\end{lstlisting}
+
+\paragraph{$f$ (bzw. $g$) - \code{BFS.Solve}} Die Funktion $f$, die die Lösung eines Zustandes ermittelt, ist hier in der Klasse \code{BFS} als \code{Solve} definiert.
+
+\begin{lstlisting}
+public void Solve()
+{
+    // Die aktuell zu betrachtenden Zustände
+    Queue<BFSNode> queue = new Queue<BFSNode>();
+    // Die bereits bestimmten und durchlaufenen Zustände
+    List<BFSNode> visitedStates = new List<BFSNode>();
+    // Zuerst soll der Anfangszustand betrachtet werden
+    queue.Enqueue(start);
+    // Dieser gilt auch schon als durchlaufen
+    visitedStates.Add(start);
+
+    // Die Lösung, falls die denn existiert
+    BFSNode result = null;
+
+    // Die Anzahl der Züge, die man bis zur Ermittlung der Lösung braucht
+    int moves = 0;
+
+    // Eine Stoppuhr zum Ermitteln der benötigten Zeit
+    Stopwatch sw = new Stopwatch();
+    sw.Start();
+
+    // Solange es noch Zustände gibt und noch keine Lösung gefunden wurde
+    while (queue.Count != 0 && result == null)
+    {
+        // Erhöhe den Fahrtenzähler um eine Fahrt
+        moves++;
+
+        // Erstelle eine Liste für alle neuen Zustände
+        List<BFSNode> temp = new List<BFSNode>();
+
+        // Für alle aktuell zu betrachtenden Zustände
+        while (queue.Count != 0 && result == null)
+        {
+            // Ermittle den aktuell zu betrachtenden
+            BFSNode current = queue.Dequeue();
+
+            // Für alle Zustände, die aus diesem folgen können
+            foreach (BFSNode p in current.AllPossibleMoves())
+            {
+                // Wenn er noch nicht vorher betrachtet wurde
+                if (!visitedStates.Contains(p))
+                {
+                    // Füge ihn den betrachteten und den neuen Zuständen hinzu
+                    temp.Add(p);
+                    visitedStates.Add(p);
+
+                    // Wenn er eine Lösung darstellt
+                    if (p.IsFinished())
+                    {
+                        // Setze die Lösung auf diesen Zustand
+                        result = p;
+                        break;
+                    }
+                }
+            }
+        }
+        foreach (BFSNode newState in temp)
+        {
+            queue.Enqueue(newState);
+        }
+    }
+
+    // Stoppe die Stoppuhr
+    sw.Stop();
+
+    // Falls eine Lösung gefunden wurde
+    if (result != null)
+    {
+        // Gebe sie aus
+        result.PrintSolution(moves);
+        Console.WriteLine("Total moves: {0}", moves);
+    }
+    // Ansonsten
+    else
+    {
+        // Gibt es keine Lösung
+        Console.WriteLine("No possible solution!");
+    }
+    Console.WriteLine("Program took {0}ms", sw.ElapsedMilliseconds);
+}
+\end{lstlisting}
+
+\chapter{Verwendung und Beispiele}
+
+\section{Kompilieren und Ausführen des Programmes}
+
+Auf Windows kann das Programm mit dem von Microsoft bereitgestellten Compiler für C\# (\texttt{csc.exe}) auf der Kommandozeile kompiliert werden:\\
+\begin{center}\verb!csc.exe seilschaften.cs!\end{center}
+Auf Linux kann das Programm mit Hilfe von Mono, einer cross-platform open source Implementation des .NET Frameworks, installiert sein kompiliert werden:
+\begin{center}\verb!mcs seilschaften!\end{center}
+	Das entstehende Programm kann auf Windows nativ ausgeführt werden (sofern das .NET Framework installiert ist), auf Linux muss der Befehl \texttt{mono} vorangestellt werden:\\
+\begin{center}\verb!seilschaften.exe <Datei>!\end{center}
+\begin{center}\verb!mono seilschaften.exe <Datei>!\end{center}
+
+\section{Beispiele}
+
+Die sieben Beispiele, die auf der Website des BwInf bereitgestellt werden, kann das Programm problemlos bearbeiten:
+\begin{lstlisting}[caption=Lösung für \texttt{seilschaften0.txt}]
+Initial state:
+Up:
+|W75,P90,P105,P195|
+Down:
+||
+Threshold: 15
+Move 1:
+Down: |W75|
+Up:   ||
+Move 2:
+Down: |P90|
+Up:   |W75|
+Move 3:
+Down: |W75|
+Up:   ||
+Move 4:
+Down: |P105|
+Up:   |P90|
+Move 5:
+Down: |P90|
+Up:   |W75|
+Move 6:
+Down: |W75|
+Up:   ||
+Move 7:
+Down: |P195|
+Up:   |P105|W75|
+Move 8:
+Down: |P105|
+Up:   |P90|
+Move 9:
+Down: |W75|
+Up:   ||
+Move 10:
+Down: |P90|
+Up:   |W75|
+Total moves: 10
+Program took 8ms
+Press any key to exit...
+\end{lstlisting}
+
+Für die anderen sechs Probleme werden keine ganzen Lösungen ausgegeben, da sie den Rahmen dieser Dokumentation\footnote{Besonders \texttt{seilschaften2.txt}} sprengen würden. Stattdessen werden nur Beispiel, benötigte Zeit zur Berechnung der Reihe an Fahrten und die Anzahl der Fahrten ausgegeben:
+
+\begin{table}[H]
+	\caption{Ergebnisse für bereitgestellte Beispiele}
+	\centering
+	\begin{tabular}{lrr}
+		\toprule
+		Beispiel & Anzahl Fahrten & Benötigte Zeit \\
+		\midrule
+		seilschaften1.txt & 14 & 17ms \\
+		seilschaften2.txt & 511 & 69ms \\
+		seilschaften3.txt & 27 & 73ms \\
+		seilschaften4.txt & 23 & 136ms \\
+		seilschaften5.txt & - & 17ms \\
+		seilschaften6.txt & 9 & 13ms \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Im folgenden sollen zwei selbst kreierte Beispiele betrachtet werden, die das Programm auf Randfälle untersuchen:
+
+\subsection{Beispiel 1: Selbsteinladende Gewichte}
+
+Ein Beispiel welches prüft, ob das Programm berücksichtigt, dass Gewichte, die von Beginn am Boden sind, sich nicht selbstständig einladen können:
+
+\begin{lstlisting}[caption=\texttt{test7.in}]
+1
+P 2 ^
+W 1 _
+\end{lstlisting}
+
+Bei diesem Beispiel ist sofort klar, dass die Person, die sich oben im Turm befindet unmöglich aus ihm entkommen kann, da sie nicht mit dem Gewicht, welches sich unten befindet, interagieren kann. Ein Testdurchlauf ergibt:
+
+\begin{lstlisting}[caption=Lösung von \texttt{test7/in}]
+No possible solution!
+Program took 4ms
+Press any key to exit...
+\end{lstlisting}
+
+\subsection{Beispiel 2: Viele Personen: nicht immer optimal}
+
+Dieses Beispiel zielt darauf ab Greedy-Algorithmen, welche Zustände nach der Anzahl an Personen bewerten, zum Scheitern zu bringen.
+
+\begin{lstlisting}[caption=\texttt{test8.in}]
+3
+P 1 _
+S 2 ^
+P 2 _
+P 6 ^
+\end{lstlisting}
+
+Algorithmen, welche immer nach der maximalen Anzahl von Personen am Boden bewerten, scheitern hieran, da sie statt den eigentlich optimalen 2 Zügen einen zusätzlichen brauchen:
+
+\begin{lstlisting}[caption=Nicht optimale Lösung zu \texttt{test8.in}]
+Initial state:
+Up:
+|W2,P6|
+Down:
+|P1,P2|
+Threshold: 3
+Move 1:
+Down: |W2|
+Up:   ||
+Move 2:
+Down: |P6|
+Up:   |P1,W2|
+Move 3:
+Down: |P1|
+Up:   ||
+Total moves: 3
+\end{lstlisting}
+
+Optimal ist es, zu Beginn beide Personen nach oben zu transportieren um so die 6kg schwere Person zu herab zu transportieren und dann die beiden oberen Personen nach unten zu transportieren:
+
+\begin{lstlisting}[caption=Optimale Lösung zu \texttt{test8.in}]
+Initial state:
+Up:
+|W2,P6|
+Down:
+|P1,P2|
+Threshold: 3
+Move 1:
+Down: |P6|
+Up:   |P1|P2|
+Move 2:
+Down: |P1|P2|
+Up:   ||
+Total moves: 2
+Program took 7ms
+Press any key to exit...
+\end{lstlisting}
+
+
+\section{Fazit und Ausblick auf Erweiterungen}
+
+Die Lösung des Fahrtenproblems durch eine Breitensuche garantiert, dass zwei Bedinungen für alle Anfangszustände immer erfüllt sind: Falls eine Lösung für den aktuellen Zustand existiert wird sie immer gefunden \textbf{und} die gefundene Lösung ist in jedem Fall die kürzestmögliche.\\
+Die Erweiterung der Problemmodellierung durch die beiden Klassen \code{BFS} und \code{BFSNode} ermöglicht es auf einfache Weise Probleme, die nach einem ähnlichen Prinzip lösbar sind, durch kleine Änderungen ohne großen Aufwand ebenfalls zu lösen. Dass ein Problem mit diesen Klassen lösbar ist, muss es zwei Bedinungen erfüllen: Es muss möglich sein, nur anhand des aktuellen Zustandes eine Liste an folgenden Zuständen zu generieren und auch zu Prüfen, ob der Zustand eine Lösung für das
+Problem darstellt. Wenn diese beiden Punkte bei der Problemimplementation eines anderen, ähnlichen Problems beachtet werden, dann gelten dieselben Garantien wie oben beschrieben. Ein Beispiel für ein Problem, welches sich genau so lösen lässt, ist die Aufgabe ``Faires Füllen'' aus der 1. Runde des diesjährigen BwInf.
+
+\chapter{Vollständiger Quelltext}
+
+\lstinputlisting[caption=\texttt{seilschaften.cs}]{C:/Users/Ben/Documents/GitHub/bwinf2/seilschaften/src/seilschaften.cs}
+
+\end{document}
